@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>なんちゃってLaTeX展開器</title>
+    <script src="index.js"></script>
+    <style type="text/css">
+      #output > .control-sequence {
+      color: red;
+      text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="input">
+\newcommand{\hoge}[2]{#2#1}
+\hoge{a}{b}
+
+\hoge{\hoge{x}{y}}{z}
+</textarea>
+    <button id="compile">コンパイル</button>
+    <div id="output"></div>
+  </body>
+</html>
