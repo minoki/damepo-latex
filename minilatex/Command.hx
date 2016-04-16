@@ -90,8 +90,10 @@ class UserCommand implements Command
 }
 class NewcommandCommand implements Command
 {
-    public function new()
+    var name: String;
+    public function new(name: String = "\\newcommand")
     {
+        this.name = name;
     }
     public function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
@@ -109,14 +111,14 @@ class NewcommandCommand implements Command
         var cmd = processor.readArgument();
         var name = switch (cmd) {
         case [x]: x;
-        case _: throw new LaTeXError("\\newcommand: invalid command name");
+        case _: throw new LaTeXError(this.name + ": invalid command name");
         };
         var numberOfArguments = switch (processor.readOptionalArgument([Character('0', 0)])) {
         case [Character(x, _)]: switch (CommandUtil.digitValue(x)) {
             case Some(n): n;
-            default: throw new LaTeXError("\\newcommand: invalid number of arguments");
+            default: throw new LaTeXError(this.name + ": invalid number of arguments");
             };
-        case _: throw new LaTeXError("\\newcommand: invalid number of arguments");
+        case _: throw new LaTeXError(this.name + ": invalid number of arguments");
         };
         var opt = processor.readOptionalArgument();
         var definitionBody = processor.readArgument();
@@ -128,7 +130,7 @@ class RenewcommandCommand extends NewcommandCommand
 {
     public function new()
     {
-        super();
+        super("\\renewcommand");
     }
     public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
@@ -146,7 +148,7 @@ class ProvidecommandCommand extends NewcommandCommand
 {
     public function new()
     {
-        super();
+        super("\\providecommand");
     }
     public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
