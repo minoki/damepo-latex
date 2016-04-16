@@ -2,6 +2,14 @@ package minilatex;
 import haxe.ds.Option;
 import minilatex.Processor;
 import minilatex.Error;
+using Command.ScopeExtender;
+class ScopeExtender
+{
+    public static function defineUnsupportedTeXPrimitive(scope: Scope, name: String)
+    {
+        scope.defineCommand(ControlSequence(name, 0), new UnsupportedTeXPrimitive(name));
+    }
+}
 class CommandUtil
 {
     public static function digitValue(c: String): Option<Int>
@@ -173,16 +181,16 @@ class DefaultScope
     public static function getDefaultScope(): Scope
     {
         var scope = new Scope(null);
+        scope.defineUnsupportedTeXPrimitive("def");
+        scope.defineUnsupportedTeXPrimitive("edef");
+        scope.defineUnsupportedTeXPrimitive("xdef");
+        scope.defineUnsupportedTeXPrimitive("gdef");
+        scope.defineUnsupportedTeXPrimitive("catcode");
         scope.defineCommand(ControlSequence("newcommand", 0), new NewcommandCommand());
         scope.defineCommand(ControlSequence("renewcommand", 0), new RenewcommandCommand());
         scope.defineCommand(ControlSequence("providecommand", 0), new ProvidecommandCommand());
         scope.defineCommand(ControlSequence("makeatletter", 0), new MakeatCommand(true));
         scope.defineCommand(ControlSequence("makeatother", 0), new MakeatCommand(false));
-        scope.defineCommand(ControlSequence("def", 0), new UnsupportedTeXPrimitive("def"));
-        scope.defineCommand(ControlSequence("edef", 0), new UnsupportedTeXPrimitive("edef"));
-        scope.defineCommand(ControlSequence("xdef", 0), new UnsupportedTeXPrimitive("xdef"));
-        scope.defineCommand(ControlSequence("gdef", 0), new UnsupportedTeXPrimitive("gdef"));
-        scope.defineCommand(ControlSequence("catcode", 0), new UnsupportedTeXPrimitive("catcode"));
         return scope;
     }
 }
