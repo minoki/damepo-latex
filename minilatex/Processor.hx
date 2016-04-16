@@ -61,7 +61,7 @@ class Processor
         if (this.pendingTokens.length > 0) {
             return this.pendingTokens.shift();
         } else {
-            var token = this.tokenizer.readToken();
+            var token = this.tokenizer.readToken(this.currentScope);
             if (token != null) {
                 return {token: token, depth: 0};
             } else {
@@ -200,7 +200,6 @@ class Processor
                 var content = result.shift();
                 result[0].push(Group(content));
                 this.currentScope = this.currentScope.parent;
-                this.tokenizer.setAtLetter(this.currentScope.isAtLetter());
             case Character('~'): // active char
                 switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
@@ -243,6 +242,5 @@ class Processor
     public function setAtLetter(value: Bool)
     {
         this.currentScope.setAtLetter(value);
-        this.tokenizer.setAtLetter(value);
     }
 }

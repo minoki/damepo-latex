@@ -1,5 +1,6 @@
 package minilatex;
 import minilatex.Token;
+import minilatex.Scope;
 private enum State {
     NewLine;
     SkipSpaces;
@@ -12,7 +13,6 @@ class Tokenizer
     var state: State;
     var rxSpaces: EReg;
     var rxComment: EReg;
-    var rxControlWord: EReg;
     var rxControlWord_atother: EReg;
     var rxControlWord_atletter: EReg;
     var rxControlSymbol: EReg;
@@ -33,11 +33,11 @@ class Tokenizer
         this.rxComment = makeRx("%[^\n]*\n?");
         this.rxControlWord_atother = makeRx("\\\\([a-zA-Z]+)");
         this.rxControlWord_atletter = makeRx("\\\\([a-zA-Z@]+)");
-        this.rxControlWord = this.rxControlWord_atother;
         this.rxControlSymbol = makeRx("\\\\(.)");
     }
-    public function readToken(): Null<Token>
+    public function readToken(scope: Scope): Null<Token>
     {
+        var rxControlWord = scope.isAtLetter ? this.rxControlWord_atletter : this.rxControlWord_atother;
         while (this.position < this.input.length) {
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (this.rxSpaces.matchSub(this.input, this.position)) {
@@ -64,9 +64,9 @@ class Tokenizer
                 this.position = p.pos + p.len;
                 this.state = State.NewLine;
                 continue;
-            } else if (this.rxControlWord.matchSub(this.input, this.position)) {
-                var word = this.rxControlWord.matched(1);
-                var p = this.rxControlWord.matchedPos();
+            } else if (rxControlWord.matchSub(this.input, this.position)) {
+                var word = rxControlWord.matched(1);
+                var p = rxControlWord.matchedPos();
                 this.position = p.pos + p.len;
                 this.state = State.SkipSpaces;
                 return new Token(ControlSequence(word), null);
@@ -116,9 +116,5 @@ class Tokenizer
         } else {
             return null;
         }
-    }
-    public function setAtLetter(value: Bool)
-    {
-        this.rxControlWord = value ? this.rxControlWord_atletter : this.rxControlWord_atother;
     }
 }

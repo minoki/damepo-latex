@@ -24,13 +24,13 @@ class Scope
     public var parent: Scope;
     var commands: Map<TokenValue, Command>;
     var environments: Map<String, Environment>;
-    var isatletter: Bool;
+    public var isAtLetter: Bool;
     public function new(parent)
     {
         this.parent = parent;
         this.commands = new Map();
         this.environments = new Map();
-        this.isatletter = parent != null && parent.isatletter;
+        this.isAtLetter = parent != null && parent.isAtLetter;
     }
     public function isCommandDefined(name: TokenValue): Bool
     {
@@ -76,12 +76,8 @@ class Scope
             return null;
         }
     }
-    public function isAtLetter(): Bool
-    {
-        return this.isatletter;
-    }
     public function setAtLetter(value: Bool)
     {
-        this.isatletter = value;
+        this.isAtLetter = value;
     }
 }
