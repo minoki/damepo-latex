@@ -18,14 +18,15 @@ class Token
         this.value = value;
         this.location = location;
     }
-}
-class TokenExtender
-{
-    public static function tokenToString(token: Token): String
+    public static function tokenValueToString(value: TokenValue): String
     {
-        return switch (token.value) {
+        return switch (value) {
         case Character(c): c;
         case ControlSequence(name): "\\" + name;
         };
+    }
+    public function toString(): String
+    {
+        return tokenValueToString(this.value);
     }
 }

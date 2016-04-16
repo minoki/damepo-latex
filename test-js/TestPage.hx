@@ -4,21 +4,22 @@ import js.html.Element;
 import js.html.TextAreaElement;
 import minilatex.Token;
 import minilatex.Tokenizer;
-import minilatex.Processor;
+import minilatex.ExpansionProcessor;
+import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Command;
 
 class TestPage
 {
-    private static function printResult(outputElement: Element, result: Array<ProcessorResult>)
+    private static function printResult(outputElement: Element, result: Array<ExecutionResult>)
     {
         for (t in result) {
             switch (t) {
             case Character(x):
                 var e = Browser.document.createTextNode(x);
                 outputElement.appendChild(e);
-            case UnexpandableCommand(name):
-                var textNode = Browser.document.createTextNode("\\" + name);
+            case UnknownCommand(name):
+                var textNode = Browser.document.createTextNode(name.toString());
                 var spanElement = Browser.document.createElement("span");
                 spanElement.appendChild(textNode);
                 spanElement.className = "control-sequence";
@@ -50,8 +51,9 @@ class TestPage
                         }
                         try {
                             var tokenizer = new Tokenizer(inputElement.value);
-                            var processor = new Processor(tokenizer, DefaultScope.getDefaultScope());
-                            var result = processor.process(1000);
+                            var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), 1000);
+                            var executionProcessor = new ExecutionProcessor(expansionProcessor);
+                            var result = executionProcessor.processAll();
                             printResult(outputElement, result);
                         } catch (e: LaTeXError) {
                             Browser.window.alert(e.toString());

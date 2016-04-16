@@ -4,7 +4,8 @@ lib_src = \
  ../minilatex/Token.hx \
  ../minilatex/Tokenizer.hx \
  ../minilatex/Scope.hx \
- ../minilatex/Processor.hx \
+ ../minilatex/ExpansionProcessor.hx \
+ ../minilatex/ExecutionProcessor.hx \
  ../minilatex/Command.hx \
  ../minilatex/Error.hx
 

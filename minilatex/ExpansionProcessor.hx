@@ -3,11 +3,13 @@ import minilatex.Token;
 import minilatex.Scope;
 import minilatex.Tokenizer;
 import minilatex.Error;
-enum ProcessorResult
+enum ExpansionResult
 {
     Character(c: String);
-    UnexpandableCommand(name: String);
-    Group(c: Array<ProcessorResult>);
+    UnknownCommand(name: Token);
+    ExecutableCommand(name: Token, command: ExecutableCommand);
+    BeginGroup;
+    EndGroup;
     AlignmentTab;
     Subscript;
     Superscript;
@@ -17,40 +19,42 @@ typedef ExpansionToken = {
     var token: Token;
     var depth: Int;
 }
-class Processor
+class ExpansionProcessor
 {
     var tokenizer: Tokenizer;
     public var currentScope: Scope;
     var pendingTokens: Array<ExpansionToken>;
-    public function new(tokenizer: Tokenizer, defaultScope: Scope = null)
+    public var recursionLimit: Int;
+    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000)
     {
         this.tokenizer = tokenizer;
-        this.currentScope = new Scope(defaultScope);
+        this.currentScope = initialScope;
         this.pendingTokens = [];
+        this.recursionLimit = recursionLimit;
     }
-    public function hasPendingToken(): Bool
+    private function hasPendingToken(): Bool
     {
         return this.pendingTokens.length > 0;
     }
-    public function unreadTokens(ts: Array<Token>, depth: Int)
+    private function unreadTokens(ts: Array<Token>, depth: Int)
     {
         for (t in ts) {
             this.unreadToken(t, depth);
         }
     }
-    public function unreadToken(t: Null<Token>, depth: Int)
+    private function unreadToken(t: Null<Token>, depth: Int)
     {
         if (t != null) {
             this.pendingTokens.push({token: t, depth: depth});
         }
     }
-    public function unreadExpansionTokens(ts: Array<ExpansionToken>)
+    private function unreadExpansionTokens(ts: Array<ExpansionToken>)
     {
         for (t in ts) {
             this.unreadExpansionToken(t);
         }
     }
-    public function unreadExpansionToken(t: Null<ExpansionToken>)
+    private function unreadExpansionToken(t: Null<ExpansionToken>)
     {
         if (t != null) {
             this.pendingTokens.push(t);
@@ -156,17 +160,12 @@ class Processor
             return defaultValue;
         }
     }
-    public function process(recursionLimit: Int = 1000): Array<ProcessorResult>
+    public function expand(): Null<ExpansionResult>
     {
-        var result: Array<Array<ProcessorResult>> = [[]];
         while (true) {
             var t = this.nextToken();
             if (t == null) {
-                if (result.length != 1) {
-                    throw new LaTeXError("Unexpected end of input");
-                } else {
-                    return result[0];
-                }
+                return null;
             }
             switch (t.token.value) {
             case Character('#'):
@@ -183,64 +182,64 @@ class Processor
                 if (doubleDollar) {
                     throw new LaTeXError("display math with `$$' is not supported");
                 }
-                result[0].push(MathShift);
+                return MathShift;
             case Character('&'):
-                result[0].push(AlignmentTab);
+                return AlignmentTab;
             case Character('_'):
-                result[0].push(Subscript);
+                return Subscript;
             case Character('^'):
-                result[0].push(Superscript);
+                return Superscript;
             case Character('{'):
-                this.currentScope = new Scope(this.currentScope);
-                result.unshift([]);
+                return BeginGroup;
             case Character('}'):
-                if (result.length <= 1) {
-                    throw new LaTeXError("extra '}'");
-                }
-                var content = result.shift();
-                result[0].push(Group(content));
-                this.currentScope = this.currentScope.parent;
+                return EndGroup;
             case Character('~'): // active char
                 switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
-                    result[0].push(UnexpandableCommand("~"));
-                    continue;
-                    //throw new LaTeXError("command not found: ~");
+                    return UnknownCommand(t.token);
                 case ExpandableCommand(command):
-                    if (t.depth > recursionLimit) {
+                    if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
                     for (e in expanded) {
                         this.unreadToken(e, t.depth + 1);
                     }
+                    // continue
                 case ExecutableCommand(command):
-                    result[0] = result[0].concat(command.doCommand(this));
+                    return ExecutableCommand(t.token, command);
                 }
             case ControlSequence(name):
                 switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
-                    result[0].push(UnexpandableCommand(name));
-                    continue;
-                    //throw new LaTeXError("command not found: " + name);
+                    return UnknownCommand(t.token);
                 case ExpandableCommand(command):
-                    if (t.depth > recursionLimit) {
+                    if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
                     for (e in expanded) {
                         this.unreadToken(e, t.depth + 1);
                     }
+                    // continue
                 case ExecutableCommand(command):
-                    result[0] = result[0].concat(command.doCommand(this));
+                    return ExecutableCommand(t.token, command);
                 }
             case Character(c):
-                result[0].push(Character(c));
+                return Character(c);
             }
         }
     }
     public function setAtLetter(value: Bool)
     {
         this.currentScope.setAtLetter(value);
+    }
+    public function enterScope()
+    {
+        this.currentScope = new Scope(this.currentScope);
+    }
+    public function leaveScope()
+    {
+        this.currentScope = this.currentScope.parent;
     }
 }

@@ -1,7 +1,8 @@
 package minilatex;
 import haxe.ds.Option;
 import minilatex.Token;
-import minilatex.Processor;
+import minilatex.ExpansionProcessor;
+import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
 using Command.ScopeExtender;
@@ -46,7 +47,7 @@ class UserCommand implements ExpandableCommand
         this.defaultValueForOptionalArgument = defaultValueForOptionalArgument;
         this.definitionBody = definitionBody;
     }
-    public function doExpand(processor: Processor)
+    public function doExpand(processor: ExpansionProcessor)
     {
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];
@@ -101,15 +102,15 @@ class NewcommandCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
-        if (processor.currentScope.isCommandDefined(name)) {
+        if (processor.expansionProcessor.currentScope.isCommandDefined(name)) {
             throw new LaTeXError("\\newcommand: command " + (switch (name) {
                     case ControlSequence(x): "\\" + x;
                     case Character(x): x;
                     }) + " is already defined");
         } else {
-            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
     private static inline function tokenListToInt(tokens: Array<Token>, defaultValue: Int): Option<Int>
@@ -126,20 +127,20 @@ class NewcommandCommand implements ExecutableCommand
         case _: None;
         };
     }
-    public function doCommand(processor: Processor)
+    public function doCommand(processor: ExecutionProcessor)
     {
-        var cmd = processor.readArgument();
+        var cmd = processor.expansionProcessor.readArgument();
         var name = switch (cmd) {
         case [x]: x.value;
         case _: throw new LaTeXError(this.name + ": invalid command name");
         };
         // TODO: expand the content of args
-        var numberOfArguments = switch (tokenListToInt(processor.readOptionalArgument(), 0)) {
+        var numberOfArguments = switch (tokenListToInt(processor.expansionProcessor.readOptionalArgument(), 0)) {
         case Some(n): n;
         default: throw new LaTeXError(this.name + ": invalid number of arguments");
         };
-        var opt = processor.readOptionalArgument();
-        var definitionBody = processor.readArgument();
+        var opt = processor.expansionProcessor.readOptionalArgument();
+        var definitionBody = processor.expansionProcessor.readArgument();
         this.doDefineCommand(processor, name, numberOfArguments, opt, definitionBody);
         return [];
     }
@@ -150,15 +151,15 @@ class RenewcommandCommand extends NewcommandCommand
     {
         super("\\renewcommand");
     }
-    public override function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
-        if (!processor.currentScope.isCommandDefined(name)) {
+        if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
             throw new LaTeXError("\\renewcommand: command " + (switch (name) {
                     case ControlSequence(x): "\\" + x;
                     case Character(x): x;
                     }) + " is not defined");
         } else {
-            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
 }
@@ -168,10 +169,10 @@ class ProvidecommandCommand extends NewcommandCommand
     {
         super("\\providecommand");
     }
-    public override function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
-        if (!processor.currentScope.isCommandDefined(name)) {
-            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+        if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
 }
@@ -182,9 +183,9 @@ class MakeatCommand implements ExecutableCommand
     {
         this.atletter = atletter;
     }
-    public function doCommand(processor: Processor): Array<ProcessorResult>
+    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
     {
-        processor.setAtLetter(this.atletter);
+        processor.expansionProcessor.setAtLetter(this.atletter);
         return [];
     }
 }
@@ -195,7 +196,7 @@ class UnsupportedCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doCommand(processor: Processor): Array<ProcessorResult>
+    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }
@@ -207,7 +208,7 @@ class UnsupportedTeXPrimitive implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doCommand(processor: Processor): Array<ProcessorResult>
+    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         throw new LaTeXError("TeX primitive '\\" + this.name + "' is not supported");
     }

@@ -1,7 +1,8 @@
 package minilatex;
 import minilatex.Token;
 import minilatex.Tokenizer;
-import minilatex.Processor;
+import minilatex.ExpansionProcessor;
+import minilatex.ExecutionProcessor;
 import minilatex.Error;
 enum Command
 {
@@ -10,11 +11,11 @@ enum Command
 }
 interface ExpandableCommand
 {
-    public function doExpand(processor: Processor): Array<Token>;
+    public function doExpand(processor: ExpansionProcessor): Array<Token>;
 }
 interface ExecutableCommand
 {
-    public function doCommand(processor: Processor): Array<ProcessorResult>;
+    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>;
 }
 interface Environment
 {
