@@ -143,7 +143,12 @@ class Processor
         if (this.pendingTokens.length > 0) {
             return this.pendingTokens.shift();
         } else {
-            return {token: this.tokenizer.readToken(), depth: 0};
+            var token = this.tokenizer.readToken();
+            if (token != null) {
+                return {token: token, depth: 0};
+            } else {
+                return null;
+            }
         }
     }
     private function nextNonspaceToken(): Null<ExpansionToken>
