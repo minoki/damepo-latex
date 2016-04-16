@@ -136,6 +136,19 @@ class ProvidecommandCommand extends NewcommandCommand
         }
     }
 }
+class MakeatCommand implements Command
+{
+    var atletter: Bool;
+    public function new(atletter: Bool)
+    {
+        this.atletter = atletter;
+    }
+    public function doCommand(processor: Processor): Array<ProcessorResult>
+    {
+        processor.setAtLetter(this.atletter);
+        return [];
+    }
+}
 class UnsupportedTeXPrimitive implements Command
 {
     var name: String;
@@ -156,6 +169,8 @@ class DefaultScope
         scope.defineCommand(ControlSequence("newcommand", 0), new NewcommandCommand());
         scope.defineCommand(ControlSequence("renewcommand", 0), new RenewcommandCommand());
         scope.defineCommand(ControlSequence("providecommand", 0), new ProvidecommandCommand());
+        scope.defineCommand(ControlSequence("makeatletter", 0), new MakeatCommand(true));
+        scope.defineCommand(ControlSequence("makeatother", 0), new MakeatCommand(false));
         scope.defineCommand(ControlSequence("def", 0), new UnsupportedTeXPrimitive("def"));
         scope.defineCommand(ControlSequence("edef", 0), new UnsupportedTeXPrimitive("edef"));
         scope.defineCommand(ControlSequence("xdef", 0), new UnsupportedTeXPrimitive("xdef"));

@@ -25,11 +25,13 @@ class Scope
     public var parent: Scope;
     var commands: Map<Token, Command>;
     var environments: Map<String, Environment>;
+    var isatletter: Bool;
     public function new(parent)
     {
         this.parent = parent;
         this.commands = new Map();
         this.environments = new Map();
+        this.isatletter = parent != null && parent.isatletter;
     }
     public function isCommandDefined(name: Token): Bool
     {
@@ -68,6 +70,14 @@ class Scope
         } else {
             return null;
         }
+    }
+    public function isAtLetter(): Bool
+    {
+        return this.isatletter;
+    }
+    public function setAtLetter(value: Bool)
+    {
+        this.isatletter = value;
     }
 }
 class Processor
@@ -228,6 +238,7 @@ class Processor
                 var content = result.shift();
                 result[0].push(Group(content));
                 this.currentScope = this.currentScope.parent;
+                this.tokenizer.setAtLetter(this.currentScope.isAtLetter());
             case Character('~', depth): // active char
                 var command = this.currentScope.lookupCommand(t);
                 if (command == null) {
@@ -260,5 +271,10 @@ class Processor
                 result[0].push(Character(c));
             }
         }
+    }
+    public function setAtLetter(value: Bool)
+    {
+        this.currentScope.setAtLetter(value);
+        this.tokenizer.setAtLetter(value);
     }
 }

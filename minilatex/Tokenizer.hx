@@ -132,12 +132,8 @@ class Tokenizer
             return null;
         }
     }
-    public function makeatletter()
+    public function setAtLetter(value: Bool)
     {
-        this.rxControlWord = this.rxControlWord_atletter;
-    }
-    public function makeatother()
-    {
-        this.rxControlWord = this.rxControlWord_atother;
+        this.rxControlWord = value ? this.rxControlWord_atletter : this.rxControlWord_atother;
     }
 }
