@@ -7,11 +7,11 @@ class ScopeExtender
 {
     public static function defineUnsupportedCommand(scope: Scope, name: String)
     {
-        scope.defineCommand(ControlSequence(name, 0), new UnsupportedCommand(name));
+        scope.defineExecutableCommand(ControlSequence(name, 0), new UnsupportedCommand(name));
     }
     public static function defineUnsupportedTeXPrimitive(scope: Scope, name: String)
     {
-        scope.defineCommand(ControlSequence(name, 0), new UnsupportedTeXPrimitive(name));
+        scope.defineExecutableCommand(ControlSequence(name, 0), new UnsupportedTeXPrimitive(name));
     }
 }
 class CommandUtil
@@ -33,7 +33,7 @@ class CommandUtil
         }
     }
 }
-class UserCommand implements Command
+class UserCommand implements ExpandableCommand
 {
     var numberOfArguments: Int;
     var defaultValueForOptionalArgument: Null<Array<Token>>;
@@ -44,7 +44,7 @@ class UserCommand implements Command
         this.defaultValueForOptionalArgument = defaultValueForOptionalArgument;
         this.definitionBody = definitionBody;
     }
-    public function doCommand(processor: Processor)
+    public function doExpand(processor: Processor)
     {
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];
@@ -61,6 +61,7 @@ class UserCommand implements Command
             --remainingArguments;
         }
         var it = this.definitionBody.iterator();
+        var result: Array<Token> = [];
         while (it.hasNext()) {
             var t = it.next();
             switch (t) {
@@ -68,7 +69,7 @@ class UserCommand implements Command
                 var u = it.next();
                 switch (u) {
                 case Character('#', _):
-                    processor.unreadToken(u);
+                    result.push(u);
                 case Character(c, _):
                     var index = switch (CommandUtil.digitValue(c)) {
                     case Some(i) if (i > 0): i;
@@ -77,18 +78,18 @@ class UserCommand implements Command
                     if (index > this.numberOfArguments) {
                         throw new LaTeXError("user-defined command: parameter out of range");
                     }
-                    processor.unreadTokens(arguments[index-1]);
+                    result = result.concat(arguments[index-1]);
                 case _:
                     throw new LaTeXError("user-defined command: invalid use of parameter character");
                 }
             default:
-                processor.unreadToken(t);
+                result.push(t);
             }
         }
-        return [];
+        return result;
     }
 }
-class NewcommandCommand implements Command
+class NewcommandCommand implements ExecutableCommand
 {
     var name: String;
     public function new(name: String = "\\newcommand")
@@ -103,7 +104,7 @@ class NewcommandCommand implements Command
                     case Character(x, _): x;
                     }) + " is already defined");
         } else {
-            processor.currentScope.defineCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
     public function doCommand(processor: Processor)
@@ -140,7 +141,7 @@ class RenewcommandCommand extends NewcommandCommand
                     case Character(x, _): x;
                     }) + " is not defined");
         } else {
-            processor.currentScope.defineCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
 }
@@ -153,11 +154,11 @@ class ProvidecommandCommand extends NewcommandCommand
     public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
         if (!processor.currentScope.isCommandDefined(name)) {
-            processor.currentScope.defineCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
 }
-class MakeatCommand implements Command
+class MakeatCommand implements ExecutableCommand
 {
     var atletter: Bool;
     public function new(atletter: Bool)
@@ -170,7 +171,7 @@ class MakeatCommand implements Command
         return [];
     }
 }
-class UnsupportedCommand implements Command
+class UnsupportedCommand implements ExecutableCommand
 {
     var name: String;
     public function new(name: String)
@@ -182,7 +183,7 @@ class UnsupportedCommand implements Command
         throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }
 }
-class UnsupportedTeXPrimitive implements Command
+class UnsupportedTeXPrimitive implements ExecutableCommand
 {
     var name: String;
     public function new(name: String)
@@ -204,11 +205,11 @@ class DefaultScope
         scope.defineUnsupportedTeXPrimitive("xdef");
         scope.defineUnsupportedTeXPrimitive("gdef");
         scope.defineUnsupportedTeXPrimitive("catcode");
-        scope.defineCommand(ControlSequence("newcommand", 0), new NewcommandCommand());
-        scope.defineCommand(ControlSequence("renewcommand", 0), new RenewcommandCommand());
-        scope.defineCommand(ControlSequence("providecommand", 0), new ProvidecommandCommand());
-        scope.defineCommand(ControlSequence("makeatletter", 0), new MakeatCommand(true));
-        scope.defineCommand(ControlSequence("makeatother", 0), new MakeatCommand(false));
+        scope.defineExecutableCommand(ControlSequence("newcommand", 0), new NewcommandCommand());
+        scope.defineExecutableCommand(ControlSequence("renewcommand", 0), new RenewcommandCommand());
+        scope.defineExecutableCommand(ControlSequence("providecommand", 0), new ProvidecommandCommand());
+        scope.defineExecutableCommand(ControlSequence("makeatletter", 0), new MakeatCommand(true));
+        scope.defineExecutableCommand(ControlSequence("makeatother", 0), new MakeatCommand(false));
         return scope;
     }
 }

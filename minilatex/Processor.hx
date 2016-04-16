@@ -13,7 +13,16 @@ enum ProcessorResult
     Superscript;
     MathShift;
 }
-interface Command
+enum Command
+{
+    ExpandableCommand(c: ExpandableCommand);
+    ExecutableCommand(c: ExecutableCommand);
+}
+interface ExpandableCommand
+{
+    public function doExpand(processor: Processor): Array<Token>;
+}
+interface ExecutableCommand
 {
     public function doCommand(processor: Processor): Array<ProcessorResult>;
 }
@@ -61,6 +70,14 @@ class Scope
     {
         this.commands.set(name.withDepth(0), definition);
     }
+    public function defineExpandableCommand(name: Token, definition: ExpandableCommand)
+    {
+        this.defineCommand(name, ExpandableCommand(definition));
+    }
+    public function defineExecutableCommand(name: Token, definition: ExecutableCommand)
+    {
+        this.defineCommand(name, ExecutableCommand(definition));
+    }
     public function lookupEnvironment(name: String): Environment
     {
         if (this.environments.exists(name)) {
@@ -84,12 +101,10 @@ class Processor
 {
     var tokenizer: Tokenizer;
     public var currentScope: Scope;
-    var currentRecursionDepth: Int;
     public function new(tokenizer: Tokenizer, defaultScope: Scope = null)
     {
         this.tokenizer = tokenizer;
         this.currentScope = new Scope(defaultScope);
-        this.currentRecursionDepth = 0;
     }
     public function hasPendingToken(): Bool
     {
@@ -104,7 +119,6 @@ class Processor
     public function unreadToken(t: Null<Token>)
     {
         if (t != null) {
-            t = t.withDepth(this.currentRecursionDepth);
             this.tokenizer.unreadToken(t);
         }
     }
@@ -240,33 +254,45 @@ class Processor
                 this.currentScope = this.currentScope.parent;
                 this.tokenizer.setAtLetter(this.currentScope.isAtLetter());
             case Character('~', depth): // active char
-                var command = this.currentScope.lookupCommand(t);
-                if (command == null) {
+                switch (this.currentScope.lookupCommand(t)) {
+                case null:
                     result[0].push(UnexpandableCommand("~"));
                     continue;
                     //throw new LaTeXError("command not found: ~");
+                case ExpandableCommand(command):
+                    if (depth > recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    var expanded = command.doExpand(this);
+                    for (e in expanded) {
+                        this.unreadToken(e.withDepth(depth + 1));
+                    }
+                case ExecutableCommand(command):
+                    if (depth > recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    result[0] = result[0].concat(command.doCommand(this));
                 }
-                if (depth > recursionLimit) {
-                    throw new LaTeXError("recursion too deep");
-                }
-                var prevRecursionDepth = this.currentRecursionDepth;
-                this.currentRecursionDepth = depth + 1;
-                result[0] = result[0].concat(command.doCommand(this));
-                this.currentRecursionDepth = prevRecursionDepth;
             case ControlSequence(name, depth):
-                var command = this.currentScope.lookupCommand(t);
-                if (command == null) {
+                switch (this.currentScope.lookupCommand(t)) {
+                case null:
                     result[0].push(UnexpandableCommand(name));
                     continue;
                     //throw new LaTeXError("command not found: " + name);
+                case ExpandableCommand(command):
+                    if (depth > recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    var expanded = command.doExpand(this);
+                    for (e in expanded) {
+                        this.unreadToken(e.withDepth(depth + 1));
+                    }
+                case ExecutableCommand(command):
+                    if (depth > recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    result[0] = result[0].concat(command.doCommand(this));
                 }
-                if (depth > recursionLimit) {
-                    throw new LaTeXError("recursion too deep");
-                }
-                var prevRecursionDepth = this.currentRecursionDepth;
-                this.currentRecursionDepth = depth + 1;
-                result[0] = result[0].concat(command.doCommand(this));
-                this.currentRecursionDepth = prevRecursionDepth;
             case Character(c, _):
                 result[0].push(Character(c));
             }
