@@ -25,12 +25,14 @@ class ExpansionProcessor
     public var currentScope: Scope;
     var pendingTokens: Array<ExpansionToken>;
     public var recursionLimit: Int;
-    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000)
+    public var pendingTokenLimit: Int;
+    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokenizer = tokenizer;
         this.currentScope = initialScope;
         this.pendingTokens = [];
         this.recursionLimit = recursionLimit;
+        this.pendingTokenLimit = pendingTokenLimit;
     }
     private function hasPendingToken(): Bool
     {
@@ -46,6 +48,9 @@ class ExpansionProcessor
     {
         if (t != null) {
             this.pendingTokens.push({token: t, depth: depth});
+            if (this.pendingTokens.length > this.pendingTokenLimit) {
+                throw new LaTeXError("token list too long");
+            }
         }
     }
     private function unreadExpansionTokens(ts: Array<ExpansionToken>)
@@ -58,6 +63,9 @@ class ExpansionProcessor
     {
         if (t != null) {
             this.pendingTokens.push(t);
+            if (this.pendingTokens.length > this.pendingTokenLimit) {
+                throw new LaTeXError("token list too long");
+            }
         }
     }
     private function nextToken(): Null<ExpansionToken>

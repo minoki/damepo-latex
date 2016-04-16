@@ -51,7 +51,7 @@ class TestPage
                         }
                         try {
                             var tokenizer = new Tokenizer(inputElement.value);
-                            var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), 1000);
+                            var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), 1000, 1000);
                             var executionProcessor = new ExecutionProcessor(expansionProcessor);
                             var result = executionProcessor.processAll();
                             printResult(outputElement, result);
