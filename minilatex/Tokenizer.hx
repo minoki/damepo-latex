@@ -9,7 +9,6 @@ class Tokenizer
 {
     var input: String;
     var position: Int;
-    var unreadTokens: Array<Token>;
     var state: State;
     var rxSpaces: EReg;
     var rxComment: EReg;
@@ -29,7 +28,6 @@ class Tokenizer
     {
         this.input = input;
         this.position = 0;
-        this.unreadTokens = [];
         this.state = State.NewLine;
         this.rxSpaces = makeRx("[ \t]+");
         this.rxComment = makeRx("%[^\n]*\n?");
@@ -38,21 +36,8 @@ class Tokenizer
         this.rxControlWord = this.rxControlWord_atother;
         this.rxControlSymbol = makeRx("\\\\(.)");
     }
-    public function hasPendingToken(): Bool
-    {
-        return this.unreadTokens.length > 0;
-    }
-    public function unreadToken(token: Null<Token>)
-    {
-        if (token != null) {
-            this.unreadTokens.push(token);
-        }
-    }
     public function readToken(): Null<Token>
     {
-        if (this.unreadTokens.length > 0) {
-            return this.unreadTokens.shift();
-        }
         while (this.position < this.input.length) {
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (this.rxSpaces.matchSub(this.input, this.position)) {
@@ -65,13 +50,13 @@ class Tokenizer
             if (c == '\n') {
                 ++this.position;
                 if (this.state == State.NewLine) {
-                    return ControlSequence("par", 0);
+                    return new Token(ControlSequence("par"), null);
                 } else if (this.state == State.SkipSpaces) {
                     this.state = State.NewLine;
                     continue;
                 } else {
                     this.state = State.NewLine;
-                    return Character(' ', 0);
+                    return new Token(Character(' '), null);
                 }
             }
             if (this.rxComment.matchSub(this.input, this.position)) {
@@ -84,7 +69,7 @@ class Tokenizer
                 var p = this.rxControlWord.matchedPos();
                 this.position = p.pos + p.len;
                 this.state = State.SkipSpaces;
-                return ControlSequence(word, 0);
+                return new Token(ControlSequence(word), null);
             } else if (this.rxControlSymbol.matchSub(this.input, this.position)) {
                 var c = this.rxControlSymbol.matched(1);
                 var p = this.rxControlSymbol.matchedPos();
@@ -94,7 +79,7 @@ class Tokenizer
                 } else {
                     this.state = State.MiddleOfLine;
                 }
-                return ControlSequence(c, 0);
+                return new Token(ControlSequence(c), null);
             } else {
                 ++this.position;
                 if (this.rxSpaces.match(c)) {
@@ -102,7 +87,7 @@ class Tokenizer
                 } else {
                     this.state = State.MiddleOfLine;
                 }
-                return Character(c, 0);
+                return new Token(Character(c), null);
             }
         }
         return null;

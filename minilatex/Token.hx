@@ -1,23 +1,31 @@
 package minilatex;
-enum Token
+enum TokenValue
 {
-    Character(c: String, depth: Int);
-    ControlSequence(name: String, depth: Int);
+    Character(c: String);
+    ControlSequence(name: String);
+}
+typedef TokenLocation = {
+    var filename: String;
+    var line: Int;
+    var column: Int;
+}
+class Token
+{
+    public var value: TokenValue;
+    public var location: TokenLocation;
+    public function new(value: TokenValue, location: TokenLocation)
+    {
+        this.value = value;
+        this.location = location;
+    }
 }
 class TokenExtender
 {
-    public static function withDepth(token: Token, depth: Int): Token
-    {
-        return switch (token) {
-        case Character(x, _): Character(x, depth);
-        case ControlSequence(x, _): ControlSequence(x, depth);
-        };
-    }
     public static function tokenToString(token: Token): String
     {
-        return switch (token) {
-        case Character(c, _): c;
-        case ControlSequence(name, _): "\\" + name;
+        return switch (token.value) {
+        case Character(c): c;
+        case ControlSequence(name): "\\" + name;
         };
     }
 }

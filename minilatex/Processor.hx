@@ -32,7 +32,7 @@ interface Environment
 class Scope
 {
     public var parent: Scope;
-    var commands: Map<Token, Command>;
+    var commands: Map<TokenValue, Command>;
     var environments: Map<String, Environment>;
     var isatletter: Bool;
     public function new(parent)
@@ -42,9 +42,8 @@ class Scope
         this.environments = new Map();
         this.isatletter = parent != null && parent.isatletter;
     }
-    public function isCommandDefined(name: Token): Bool
+    public function isCommandDefined(name: TokenValue): Bool
     {
-        name = name.withDepth(0);
         var scope = this;
         while (scope != null) {
             if (scope.commands.exists(name)) {
@@ -54,9 +53,8 @@ class Scope
         }
         return false;
     }
-    public function lookupCommand(name: Token): Command
+    public function lookupCommand(name: TokenValue): Command
     {
-        name = name.withDepth(0);
         var scope = this;
         while (scope != null) {
             if (scope.commands.exists(name)) {
@@ -66,15 +64,15 @@ class Scope
         }
         return null;
     }
-    public function defineCommand(name: Token, definition: Command)
+    public function defineCommand(name: TokenValue, definition: Command)
     {
-        this.commands.set(name.withDepth(0), definition);
+        this.commands.set(name, definition);
     }
-    public function defineExpandableCommand(name: Token, definition: ExpandableCommand)
+    public function defineExpandableCommand(name: TokenValue, definition: ExpandableCommand)
     {
         this.defineCommand(name, ExpandableCommand(definition));
     }
-    public function defineExecutableCommand(name: Token, definition: ExecutableCommand)
+    public function defineExecutableCommand(name: TokenValue, definition: ExecutableCommand)
     {
         this.defineCommand(name, ExecutableCommand(definition));
     }
@@ -97,38 +95,64 @@ class Scope
         this.isatletter = value;
     }
 }
+typedef ExpansionToken = {
+    var token: Token;
+    var depth: Int;
+}
 class Processor
 {
     var tokenizer: Tokenizer;
     public var currentScope: Scope;
+    var pendingTokens: Array<ExpansionToken>;
     public function new(tokenizer: Tokenizer, defaultScope: Scope = null)
     {
         this.tokenizer = tokenizer;
         this.currentScope = new Scope(defaultScope);
+        this.pendingTokens = [];
     }
     public function hasPendingToken(): Bool
     {
-        return this.tokenizer.hasPendingToken();
+        return this.pendingTokens.length > 0;
     }
-    public function unreadTokens(ts: Array<Token>)
+    public function unreadTokens(ts: Array<Token>, depth: Int)
     {
         for (t in ts) {
-            this.unreadToken(t);
+            this.unreadToken(t, depth);
         }
     }
-    public function unreadToken(t: Null<Token>)
+    public function unreadToken(t: Null<Token>, depth: Int)
     {
         if (t != null) {
-            this.tokenizer.unreadToken(t);
+            this.pendingTokens.push({token: t, depth: depth});
         }
     }
-    private function nextNonspaceToken(): Null<Token>
+    public function unreadExpansionTokens(ts: Array<ExpansionToken>)
+    {
+        for (t in ts) {
+            this.unreadExpansionToken(t);
+        }
+    }
+    public function unreadExpansionToken(t: Null<ExpansionToken>)
+    {
+        if (t != null) {
+            this.pendingTokens.push(t);
+        }
+    }
+    private function nextToken(): Null<ExpansionToken>
+    {
+        if (this.pendingTokens.length > 0) {
+            return this.pendingTokens.shift();
+        } else {
+            return {token: this.tokenizer.readToken(), depth: 0};
+        }
+    }
+    private function nextNonspaceToken(): Null<ExpansionToken>
     {
         while (true) {
             var t = this.nextToken();
             if (t != null) {
-                switch (t) {
-                case Character(c, _):
+                switch (t.token.value) {
+                case Character(c):
                     if (c != " " && c != "\t" && c != "\n") {
                         return t;
                     }
@@ -141,26 +165,25 @@ class Processor
             }
         }
     }
-    private function nextToken(): Null<Token>
-    {
-        return this.tokenizer.readToken();
-    }
     public function readArgument(): Null<Array<Token>>
     {
         var t = this.nextNonspaceToken();
-        switch (t) {
-        case null: return null;
-        case Character('{', _):
-            var a = new Array<Token>();
+        if (t == null) {
+            return null;
+        }
+        switch (t.token.value) {
+        case Character('{'):
+            var a: Array<Token> = [];
             var count = 0;
             while (true) {
                 var u = this.nextToken();
-                switch (u) {
-                case null:
+                if (u == null) {
                     throw new LaTeXError("mismatched braces");
-                case Character('{', _):
+                }
+                switch (u.token.value) {
+                case Character('{'):
                     ++count;
-                case Character('}', _):
+                case Character('}'):
                     if (count == 0) {
                         return a;
                     } else {
@@ -168,43 +191,45 @@ class Processor
                     }
                 default:
                 }
-                a.push(u);
+                a.push(u.token);
             }
         case _:
-            return [t];
+            return [t.token];
         }
     }
     public function readOptionalArgument(defaultValue: Array<Token> = null): Array<Token>
     {
         var t = this.nextNonspaceToken();
-        switch (t) {
-        case Character('[', _):
-            var a = new Array<Token>();
+        if (t == null) {
+            return defaultValue;
+        }
+        switch (t.token.value) {
+        case Character('['):
+            var a: Array<ExpansionToken> = [];
             var count = 0;
             while (true) {
                 var t = this.nextToken();
-                switch (t) {
-                case null:
-                    for (u in a) {
-                        this.unreadToken(u);
-                    }
+                if (t == null) {
+                    this.unreadExpansionTokens(a);
                     return defaultValue;
-                case Character('{', _):
+                }
+                switch (t.token.value) {
+                case Character('{'):
                     ++count;
-                case Character('}', _):
+                case Character('}'):
                     if (count > 0) {
                         --count;
                     }
-                case Character(']', _):
+                case Character(']'):
                     if (count == 0) {
-                        return a;
+                        return a.map(function(u) { return u.token; });
                     }
                 default:
                 }
                 a.push(t);
             }
         default:
-            this.unreadToken(t);
+            this.unreadExpansionToken(t);
             return defaultValue;
         }
     }
@@ -220,32 +245,32 @@ class Processor
                     return result[0];
                 }
             }
-            switch (t) {
-            case Character('#', _):
+            switch (t.token.value) {
+            case Character('#'):
                 throw new LaTeXError("unexpected parameter char '#'");
-            case Character('$', _):
+            case Character('$'):
                 var u = this.nextToken();
-                var doubleDollar = switch (u) {
-                case Character('$', _):
+                var doubleDollar = u != null && switch (u.token.value) {
+                case Character('$'):
                     true;
                 default:
-                    this.unreadToken(u);
+                    this.unreadExpansionToken(u);
                     false;
                 };
                 if (doubleDollar) {
                     throw new LaTeXError("display math with `$$' is not supported");
                 }
                 result[0].push(MathShift);
-            case Character('&', _):
+            case Character('&'):
                 result[0].push(AlignmentTab);
-            case Character('_', _):
+            case Character('_'):
                 result[0].push(Subscript);
-            case Character('^', _):
+            case Character('^'):
                 result[0].push(Superscript);
-            case Character('{', _):
+            case Character('{'):
                 this.currentScope = new Scope(this.currentScope);
                 result.unshift([]);
-            case Character('}', _):
+            case Character('}'):
                 if (result.length <= 1) {
                     throw new LaTeXError("extra '}'");
                 }
@@ -253,47 +278,41 @@ class Processor
                 result[0].push(Group(content));
                 this.currentScope = this.currentScope.parent;
                 this.tokenizer.setAtLetter(this.currentScope.isAtLetter());
-            case Character('~', depth): // active char
-                switch (this.currentScope.lookupCommand(t)) {
+            case Character('~'): // active char
+                switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
                     result[0].push(UnexpandableCommand("~"));
                     continue;
                     //throw new LaTeXError("command not found: ~");
                 case ExpandableCommand(command):
-                    if (depth > recursionLimit) {
+                    if (t.depth > recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
                     for (e in expanded) {
-                        this.unreadToken(e.withDepth(depth + 1));
+                        this.unreadToken(e, t.depth + 1);
                     }
                 case ExecutableCommand(command):
-                    if (depth > recursionLimit) {
-                        throw new LaTeXError("recursion too deep");
-                    }
                     result[0] = result[0].concat(command.doCommand(this));
                 }
-            case ControlSequence(name, depth):
-                switch (this.currentScope.lookupCommand(t)) {
+            case ControlSequence(name):
+                switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
                     result[0].push(UnexpandableCommand(name));
                     continue;
                     //throw new LaTeXError("command not found: " + name);
                 case ExpandableCommand(command):
-                    if (depth > recursionLimit) {
+                    if (t.depth > recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
                     for (e in expanded) {
-                        this.unreadToken(e.withDepth(depth + 1));
+                        this.unreadToken(e, t.depth + 1);
                     }
                 case ExecutableCommand(command):
-                    if (depth > recursionLimit) {
-                        throw new LaTeXError("recursion too deep");
-                    }
                     result[0] = result[0].concat(command.doCommand(this));
                 }
-            case Character(c, _):
+            case Character(c):
                 result[0].push(Character(c));
             }
         }

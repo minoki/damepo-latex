@@ -1,5 +1,6 @@
 package minilatex;
 import haxe.ds.Option;
+import minilatex.Token;
 import minilatex.Processor;
 import minilatex.Error;
 using Command.ScopeExtender;
@@ -7,11 +8,11 @@ class ScopeExtender
 {
     public static function defineUnsupportedCommand(scope: Scope, name: String)
     {
-        scope.defineExecutableCommand(ControlSequence(name, 0), new UnsupportedCommand(name));
+        scope.defineExecutableCommand(ControlSequence(name), new UnsupportedCommand(name));
     }
     public static function defineUnsupportedTeXPrimitive(scope: Scope, name: String)
     {
-        scope.defineExecutableCommand(ControlSequence(name, 0), new UnsupportedTeXPrimitive(name));
+        scope.defineExecutableCommand(ControlSequence(name), new UnsupportedTeXPrimitive(name));
     }
 }
 class CommandUtil
@@ -64,13 +65,16 @@ class UserCommand implements ExpandableCommand
         var result: Array<Token> = [];
         while (it.hasNext()) {
             var t = it.next();
-            switch (t) {
-            case Character('#', _):
+            switch (t.value) {
+            case Character('#'):
                 var u = it.next();
-                switch (u) {
-                case Character('#', _):
+                if (u == null) {
+                    throw new LaTeXError("user-defined command: invalid use of parameter character");
+                }
+                switch (u.value) {
+                case Character('#'):
                     result.push(u);
-                case Character(c, _):
+                case Character(c):
                     var index = switch (CommandUtil.digitValue(c)) {
                     case Some(i) if (i > 0): i;
                     default: throw new LaTeXError("user-defined command: invalid parameter character");
@@ -96,30 +100,42 @@ class NewcommandCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
         if (processor.currentScope.isCommandDefined(name)) {
             throw new LaTeXError("\\newcommand: command " + (switch (name) {
-                    case ControlSequence(x, _): "\\" + x;
-                    case Character(x, _): x;
+                    case ControlSequence(x): "\\" + x;
+                    case Character(x): x;
                     }) + " is already defined");
         } else {
             processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
         }
     }
+    private static inline function tokenListToInt(tokens: Array<Token>, defaultValue: Int): Option<Int>
+    {
+        if (tokens == null) {
+            return Some(defaultValue);
+        }
+        if (tokens.length != 1) {
+            return None;
+        }
+        return switch (tokens[0].value) {
+        case Character(x):
+            CommandUtil.digitValue(x);
+        case _: None;
+        };
+    }
     public function doCommand(processor: Processor)
     {
         var cmd = processor.readArgument();
         var name = switch (cmd) {
-        case [x]: x;
+        case [x]: x.value;
         case _: throw new LaTeXError(this.name + ": invalid command name");
         };
-        var numberOfArguments = switch (processor.readOptionalArgument([Character('0', 0)])) {
-        case [Character(x, _)]: switch (CommandUtil.digitValue(x)) {
-            case Some(n): n;
-            default: throw new LaTeXError(this.name + ": invalid number of arguments");
-            };
-        case _: throw new LaTeXError(this.name + ": invalid number of arguments");
+        // TODO: expand the content of args
+        var numberOfArguments = switch (tokenListToInt(processor.readOptionalArgument(), 0)) {
+        case Some(n): n;
+        default: throw new LaTeXError(this.name + ": invalid number of arguments");
         };
         var opt = processor.readOptionalArgument();
         var definitionBody = processor.readArgument();
@@ -133,12 +149,12 @@ class RenewcommandCommand extends NewcommandCommand
     {
         super("\\renewcommand");
     }
-    public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
         if (!processor.currentScope.isCommandDefined(name)) {
             throw new LaTeXError("\\renewcommand: command " + (switch (name) {
-                    case ControlSequence(x, _): "\\" + x;
-                    case Character(x, _): x;
+                    case ControlSequence(x): "\\" + x;
+                    case Character(x): x;
                     }) + " is not defined");
         } else {
             processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
@@ -151,7 +167,7 @@ class ProvidecommandCommand extends NewcommandCommand
     {
         super("\\providecommand");
     }
-    public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: Processor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
         if (!processor.currentScope.isCommandDefined(name)) {
             processor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
@@ -205,11 +221,11 @@ class DefaultScope
         scope.defineUnsupportedTeXPrimitive("xdef");
         scope.defineUnsupportedTeXPrimitive("gdef");
         scope.defineUnsupportedTeXPrimitive("catcode");
-        scope.defineExecutableCommand(ControlSequence("newcommand", 0), new NewcommandCommand());
-        scope.defineExecutableCommand(ControlSequence("renewcommand", 0), new RenewcommandCommand());
-        scope.defineExecutableCommand(ControlSequence("providecommand", 0), new ProvidecommandCommand());
-        scope.defineExecutableCommand(ControlSequence("makeatletter", 0), new MakeatCommand(true));
-        scope.defineExecutableCommand(ControlSequence("makeatother", 0), new MakeatCommand(false));
+        scope.defineExecutableCommand(ControlSequence("newcommand"), new NewcommandCommand());
+        scope.defineExecutableCommand(ControlSequence("renewcommand"), new RenewcommandCommand());
+        scope.defineExecutableCommand(ControlSequence("providecommand"), new ProvidecommandCommand());
+        scope.defineExecutableCommand(ControlSequence("makeatletter"), new MakeatCommand(true));
+        scope.defineExecutableCommand(ControlSequence("makeatother"), new MakeatCommand(false));
         return scope;
     }
 }
