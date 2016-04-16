@@ -3,6 +3,7 @@ import haxe.ds.Option;
 import minilatex.Token;
 import minilatex.Processor;
 import minilatex.Error;
+import minilatex.Scope;
 using Command.ScopeExtender;
 class ScopeExtender
 {

@@ -3,6 +3,7 @@ all: index.js
 lib_src = \
  ../minilatex/Token.hx \
  ../minilatex/Tokenizer.hx \
+ ../minilatex/Scope.hx \
  ../minilatex/Processor.hx \
  ../minilatex/Command.hx \
  ../minilatex/Error.hx
