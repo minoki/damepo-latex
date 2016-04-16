@@ -120,7 +120,14 @@ class RenewcommandCommand extends NewcommandCommand
     }
     public override function doDefineCommand(processor: Processor, name: Token, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
     {
-        processor.currentScope.defineCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+        if (!processor.currentScope.isCommandDefined(name)) {
+            throw new LaTeXError("\\renewcommand: command " + (switch (name) {
+                    case ControlSequence(x, _): "\\" + x;
+                    case Character(x, _): x;
+                    }) + " is not defined");
+        } else {
+            processor.currentScope.defineCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+        }
     }
 }
 class ProvidecommandCommand extends NewcommandCommand
