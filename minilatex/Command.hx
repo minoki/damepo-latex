@@ -5,6 +5,10 @@ import minilatex.Error;
 using Command.ScopeExtender;
 class ScopeExtender
 {
+    public static function defineUnsupportedCommand(scope: Scope, name: String)
+    {
+        scope.defineCommand(ControlSequence(name, 0), new UnsupportedCommand(name));
+    }
     public static function defineUnsupportedTeXPrimitive(scope: Scope, name: String)
     {
         scope.defineCommand(ControlSequence(name, 0), new UnsupportedTeXPrimitive(name));
@@ -162,6 +166,18 @@ class MakeatCommand implements Command
     {
         processor.setAtLetter(this.atletter);
         return [];
+    }
+}
+class UnsupportedCommand implements Command
+{
+    var name: String;
+    public function new(name: String)
+    {
+        this.name = name;
+    }
+    public function doCommand(processor: Processor): Array<ProcessorResult>
+    {
+        throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }
 }
 class UnsupportedTeXPrimitive implements Command
