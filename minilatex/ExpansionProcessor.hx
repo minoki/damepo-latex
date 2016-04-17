@@ -203,9 +203,7 @@ class ExpansionProcessor
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
-                    for (e in expanded) {
-                        this.unreadToken(e, t.depth + 1);
-                    }
+                    this.unreadTokens(expanded, t.depth + 1);
                     // continue
                 case ExecutableCommand(command):
                     return ExecutableCommand(t.token, command);
@@ -219,9 +217,7 @@ class ExpansionProcessor
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.doExpand(this);
-                    for (e in expanded) {
-                        this.unreadToken(e, t.depth + 1);
-                    }
+                    this.unreadTokens(expanded, t.depth + 1);
                     // continue
                 case ExecutableCommand(command):
                     return ExecutableCommand(t.token, command);
