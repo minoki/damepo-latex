@@ -30,3 +30,14 @@ class Token
         return tokenValueToString(this.value);
     }
 }
+class TokenLocationExtender
+{
+    public static function toString(location: Null<TokenLocation>)
+    {
+        if (location == null) {
+            return "(location info unavailable)";
+        } else {
+            return "file " + location.filename + ", line " + location.line + ", column " + location.column;
+        }
+    }
+}

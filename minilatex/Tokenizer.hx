@@ -41,6 +41,7 @@ class Tokenizer
         #else
             this.position += matchedPos.pos + matchedPos.len;
         #end
+        this.currentColumn += matchedPos.len;
     }
     public function new(input: String, filename: String = "<input>")
     {
@@ -64,17 +65,13 @@ class Tokenizer
         while (this.position < this.input.length) {
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (matchAnchoredRx(this.rxSpaces, this.input, this.position)) {
-                    var matchedPos = this.rxSpaces.matchedPos();
-                    updatePosition(matchedPos);
-                    this.currentColumn += matchedPos.len; // rxSpaces does not match EOL
+                    updatePosition(this.rxSpaces.matchedPos());
                     continue;
                 }
             }
+            var currentLocation = this.getCurrentLocation();
             if (matchAnchoredRx(rxToken, this.input, this.position)) {
-                var matchedPos = rxToken.matchedPos();
-                var currentLocation = this.getCurrentLocation();
-                updatePosition(matchedPos);
-                this.currentColumn += matchedPos.len;
+                updatePosition(rxToken.matchedPos());
 
                 if (rxToken.matched(1) != null) { /* comment */
                     this.state = State.NewLine;
@@ -127,10 +124,10 @@ class Tokenizer
                     return new Token(Character(c), currentLocation);
 
                 } else {
-                    throw new LaTeXError("regexp error");
+                    throw new TokenError("internal error", currentLocation);
                 }
             } else {
-                throw new LaTeXError("unexpected character");
+                throw new TokenError("unexpected character", currentLocation);
             }
         }
         return null;
