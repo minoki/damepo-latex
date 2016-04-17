@@ -53,12 +53,6 @@ class ExpansionProcessor
             }
         }
     }
-    private function unreadExpansionTokens(ts: Array<ExpansionToken>)
-    {
-        for (t in ts) {
-            this.unreadExpansionToken(t);
-        }
-    }
     private function unreadExpansionToken(t: Null<ExpansionToken>)
     {
         if (t != null) {
@@ -145,8 +139,7 @@ class ExpansionProcessor
             while (true) {
                 var t = this.nextToken();
                 if (t == null) {
-                    this.unreadExpansionTokens(a);
-                    return defaultValue;
+                    throw new LaTeXError("mismatched brackets");
                 }
                 switch (t.token.value) {
                 case Character('{'):
