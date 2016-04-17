@@ -40,14 +40,15 @@ class ExpansionProcessor
     }
     private function unreadTokens(ts: Array<Token>, depth: Int)
     {
-        for (t in ts) {
-            this.unreadToken(t, depth);
+        var i = ts.length;
+        while (i > 0) {
+            this.unreadToken(ts[--i], depth);
         }
     }
     private function unreadToken(t: Null<Token>, depth: Int)
     {
         if (t != null) {
-            this.pendingTokens.push({token: t, depth: depth});
+            this.pendingTokens.unshift({token: t, depth: depth});
             if (this.pendingTokens.length > this.pendingTokenLimit) {
                 throw new LaTeXError("token list too long");
             }
@@ -56,7 +57,7 @@ class ExpansionProcessor
     private function unreadExpansionToken(t: Null<ExpansionToken>)
     {
         if (t != null) {
-            this.pendingTokens.push(t);
+            this.pendingTokens.unshift(t);
             if (this.pendingTokens.length > this.pendingTokenLimit) {
                 throw new LaTeXError("token list too long");
             }
