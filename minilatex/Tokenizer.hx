@@ -65,6 +65,7 @@ class Tokenizer
         var rxToken = scope.isAtLetter ? this.rxToken_atletter : this.rxToken_atother;
         while (this.position < this.input.length) {
             if (this.state == State.Verbatim) {
+                var currentLocation = this.getCurrentLocation();
                 var c = this.input.charAt(this.position);
                 ++this.position;
                 ++this.currentColumn;
@@ -72,7 +73,7 @@ class Tokenizer
                     ++this.currentLine;
                     this.currentColumn = 0;
                 }
-                return new Token(Character(c), this.getCurrentLocation());
+                return new Token(Character(c), currentLocation);
             }
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (matchAnchoredRx(this.rxSpaces, this.input, this.position)) {
