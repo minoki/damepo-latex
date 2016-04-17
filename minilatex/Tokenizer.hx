@@ -33,7 +33,7 @@ class Tokenizer
         this.rxComment = makeRx("%[^\n]*\n?");
         this.rxControlWord_atother = makeRx("\\\\([a-zA-Z]+)");
         this.rxControlWord_atletter = makeRx("\\\\([a-zA-Z@]+)");
-        this.rxControlSymbol = makeRx("\\\\(.)");
+        this.rxControlSymbol = makeRx("\\\\(.|\n)");
     }
     public function readToken(scope: Scope): Null<Token>
     {
@@ -75,7 +75,11 @@ class Tokenizer
                 var p = this.rxControlSymbol.matchedPos();
                 this.position = p.pos + p.len;
                 if (this.rxSpaces.match(c)) {
+                    c = ' ';
                     this.state = State.SkipSpaces;
+                } else if (c == '\n') {
+                    c = ' ';
+                    this.state = State.NewLine;
                 } else {
                     this.state = State.MiddleOfLine;
                 }
