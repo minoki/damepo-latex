@@ -1,4 +1,4 @@
-all: test-js test-neko
+all: test-neko test-js test-php
 
 lib_src = \
  ../minilatex/Token.hx \
@@ -9,13 +9,13 @@ lib_src = \
  ../minilatex/Command.hx \
  ../minilatex/Error.hx
 
-test.js: Main.hx $(lib_src)
-	haxe -main Main -js $@ -cp ..
-
-test-js: test.js
-	node $<
-
 test-neko: Main.hx $(lib_src)
-	haxe -main Main -x test -cp ..
+	haxe -main Main -cp .. -x test
 
-.PHONY: all test-js test-neko
+test-js: Main.hx $(lib_src)
+	haxe -main Main -cp .. -js test.js -cmd "node test.js"
+
+test-php: Main.hx $(lib_src)
+	haxe -main Main -cp .. -php testphp -cmd "php testphp/index.php"
+
+.PHONY: all test-neko test-js test-php
