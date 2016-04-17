@@ -1,6 +1,7 @@
 package minilatex;
 import minilatex.Token;
 import minilatex.Scope;
+import minilatex.Error;
 private enum State {
     NewLine;
     SkipSpaces;
@@ -12,10 +13,8 @@ class Tokenizer
     var position: Int;
     var state: State;
     var rxSpaces: EReg;
-    var rxComment: EReg;
-    var rxControlWord_atother: EReg;
-    var rxControlWord_atletter: EReg;
-    var rxControlSymbol: EReg;
+    var rxToken_atletter: EReg;
+    var rxToken_atother: EReg;
     private static inline function makeRx(s: String): EReg
     {
         #if php
@@ -30,14 +29,12 @@ class Tokenizer
         this.position = 0;
         this.state = State.NewLine;
         this.rxSpaces = makeRx("[ \t]+");
-        this.rxComment = makeRx("%[^\n]*\n?");
-        this.rxControlWord_atother = makeRx("\\\\([a-zA-Z]+)");
-        this.rxControlWord_atletter = makeRx("\\\\([a-zA-Z@]+)");
-        this.rxControlSymbol = makeRx("\\\\(.|\n)");
+        this.rxToken_atother = makeRx("(?:(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n))|([ \t])|(\n)|([^%\\\\]))");
+        this.rxToken_atletter = makeRx("(?:(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n))|([ \t])|(\n)|([^%\\\\]))");
     }
     public function readToken(scope: Scope): Null<Token>
     {
-        var rxControlWord = scope.isAtLetter ? this.rxControlWord_atletter : this.rxControlWord_atother;
+        var rxToken = scope.isAtLetter ? this.rxToken_atletter : this.rxToken_atother;
         while (this.position < this.input.length) {
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (this.rxSpaces.matchSub(this.input, this.position)) {
@@ -46,52 +43,58 @@ class Tokenizer
                     continue;
                 }
             }
-            var c = this.input.charAt(this.position);
-            if (c == '\n') {
-                ++this.position;
-                if (this.state == State.NewLine) {
-                    return new Token(ControlSequence("par"), null);
-                } else if (this.state == State.SkipSpaces) {
+            if (rxToken.matchSub(this.input, this.position)) {
+                var p = rxToken.matchedPos();
+                this.position = p.pos + p.len;
+
+                if (rxToken.matched(1) != null) { /* comment */
                     this.state = State.NewLine;
                     continue;
-                } else {
-                    this.state = State.NewLine;
-                    return new Token(Character(' '), null);
-                }
-            }
-            if (this.rxComment.matchSub(this.input, this.position)) {
-                var p = this.rxComment.matchedPos();
-                this.position = p.pos + p.len;
-                this.state = State.NewLine;
-                continue;
-            } else if (rxControlWord.matchSub(this.input, this.position)) {
-                var word = rxControlWord.matched(1);
-                var p = rxControlWord.matchedPos();
-                this.position = p.pos + p.len;
-                this.state = State.SkipSpaces;
-                return new Token(ControlSequence(word), null);
-            } else if (this.rxControlSymbol.matchSub(this.input, this.position)) {
-                var c = this.rxControlSymbol.matched(1);
-                var p = this.rxControlSymbol.matchedPos();
-                this.position = p.pos + p.len;
-                if (this.rxSpaces.match(c)) {
-                    c = ' ';
+
+                } else if (rxToken.matched(2) != null) { /* control word */
+                    var word = rxToken.matched(2);
                     this.state = State.SkipSpaces;
-                } else if (c == '\n') {
-                    c = ' ';
-                    this.state = State.NewLine;
-                } else {
+                    return new Token(ControlSequence(word), null);
+
+                } else if (rxToken.matched(3) != null) { /* control symbol */
+                    var c = rxToken.matched(3);
+                    if (this.rxSpaces.match(c)) {
+                        c = ' ';
+                        this.state = State.SkipSpaces;
+                    } else if (c == '\n') {
+                        c = ' ';
+                        this.state = State.NewLine;
+                    } else {
+                        this.state = State.MiddleOfLine;
+                    }
+                    return new Token(ControlSequence(c), null);
+
+                } else if (rxToken.matched(4) != null) { /* space */
+                    this.state = State.SkipSpaces;
+                    return new Token(ControlSequence(' '), null);
+
+                } else if (rxToken.matched(5) != null) { /* newline */
+                    switch (this.state) {
+                    case State.NewLine:
+                        return new Token(ControlSequence("par"), null);
+                    case State.SkipSpaces:
+                        this.state = State.NewLine;
+                        continue;
+                    default:
+                        this.state = State.NewLine;
+                        return new Token(Character(' '), null);
+                    }
+
+                } else if (rxToken.matched(6) != null) { /* other */
+                    var c = rxToken.matched(6);
                     this.state = State.MiddleOfLine;
+                    return new Token(Character(c), null);
+
+                } else {
+                    throw new LaTeXError("regexp error");
                 }
-                return new Token(ControlSequence(c), null);
             } else {
-                ++this.position;
-                if (this.rxSpaces.match(c)) {
-                    this.state = State.SkipSpaces;
-                } else {
-                    this.state = State.MiddleOfLine;
-                }
-                return new Token(Character(c), null);
+                throw new LaTeXError("unexpected character");
             }
         }
         return null;
