@@ -115,7 +115,7 @@ class Tokenizer
 
                 } else if (rxToken.matched(4) != null) { /* space */
                     this.state = State.SkipSpaces;
-                    return new Token(ControlSequence(' '), currentLocation);
+                    return new Token(Character(' '), currentLocation);
 
                 } else if (rxToken.matched(5) != null) { /* newline */
                     var currentLocation = this.getCurrentLocation();
