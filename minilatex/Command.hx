@@ -231,7 +231,7 @@ class DefaultScope
     public static function getDefaultScope(): Scope
     {
         var scope = new Scope(null);
-        defineStandardCommand(scope);
+        defineStandardCommands(scope);
         return scope;
     }
 }
