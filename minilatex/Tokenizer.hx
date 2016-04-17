@@ -52,8 +52,8 @@ class Tokenizer
         this.currentColumn = 0;
         this.state = State.NewLine;
         this.rxSpaces = makeAnchoredRx("[ \t]+");
-        this.rxToken_atother = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n))|([ \t])|(\n)|([^%\\\\])");
-        this.rxToken_atletter = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n))|([ \t])|(\n)|([^%\\\\])");
+        this.rxToken_atother = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n|))|([ \t])|(\n)|([^%\\\\])");
+        this.rxToken_atletter = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n|))|([ \t])|(\n)|([^%\\\\])");
     }
     function getCurrentLocation(): TokenLocation
     {
@@ -94,6 +94,8 @@ class Tokenizer
                         this.state = State.NewLine;
                         ++this.currentLine;
                         this.currentColumn = 0;
+                    } else if (c == '') {
+                        throw new TokenError("unexpected end of input after '\\'", currentLocation);
                     } else {
                         this.state = State.MiddleOfLine;
                     }
