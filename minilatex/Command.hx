@@ -215,9 +215,8 @@ class UnsupportedTeXPrimitive implements ExecutableCommand
 }
 class DefaultScope
 {
-    public static function getDefaultScope(): Scope
+    public static function defineStandardCommands(scope: Scope)
     {
-        var scope = new Scope(null);
         scope.defineUnsupportedTeXPrimitive("def");
         scope.defineUnsupportedTeXPrimitive("edef");
         scope.defineUnsupportedTeXPrimitive("xdef");
@@ -228,6 +227,11 @@ class DefaultScope
         scope.defineExecutableCommand(ControlSequence("providecommand"), new ProvidecommandCommand());
         scope.defineExecutableCommand(ControlSequence("makeatletter"), new MakeatCommand(true));
         scope.defineExecutableCommand(ControlSequence("makeatother"), new MakeatCommand(false));
+    }
+    public static function getDefaultScope(): Scope
+    {
+        var scope = new Scope(null);
+        defineStandardCommand(scope);
         return scope;
     }
 }
