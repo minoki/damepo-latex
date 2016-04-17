@@ -15,12 +15,28 @@ class Tokenizer
     var rxSpaces: EReg;
     var rxToken_atletter: EReg;
     var rxToken_atother: EReg;
-    private static inline function makeRx(s: String): EReg
+    private static inline function makeAnchoredRx(s: String): EReg
     {
         #if php
         return new EReg(s, "A");
         #else
-        return new EReg("^" + s, "");
+        return new EReg("^(?:" + s + ")", "");
+        #end
+    }
+    private static inline function matchAnchoredRx(r: EReg, s: String, pos: Int): Bool
+    {
+        #if php
+            return r.matchSub(s, pos);
+        #else
+            return r.match(s.substring(pos));
+        #end
+    }
+    private inline function updatePosition(matchedPos: {pos: Int, len: Int})
+    {
+        #if php
+            this.position = matchedPos.pos + matchedPos.len;
+        #else
+            this.position += matchedPos.pos + matchedPos.len;
         #end
     }
     public function new(input: String)
@@ -28,24 +44,22 @@ class Tokenizer
         this.input = input;
         this.position = 0;
         this.state = State.NewLine;
-        this.rxSpaces = makeRx("[ \t]+");
-        this.rxToken_atother = makeRx("(?:(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n))|([ \t])|(\n)|([^%\\\\]))");
-        this.rxToken_atletter = makeRx("(?:(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n))|([ \t])|(\n)|([^%\\\\]))");
+        this.rxSpaces = makeAnchoredRx("[ \t]+");
+        this.rxToken_atother = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n))|([ \t])|(\n)|([^%\\\\])");
+        this.rxToken_atletter = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n))|([ \t])|(\n)|([^%\\\\])");
     }
     public function readToken(scope: Scope): Null<Token>
     {
         var rxToken = scope.isAtLetter ? this.rxToken_atletter : this.rxToken_atother;
         while (this.position < this.input.length) {
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
-                if (this.rxSpaces.matchSub(this.input, this.position)) {
-                    var p = this.rxSpaces.matchedPos();
-                    this.position = p.pos + p.len;
+                if (matchAnchoredRx(this.rxSpaces, this.input, this.position)) {
+                    updatePosition(this.rxSpaces.matchedPos());
                     continue;
                 }
             }
-            if (rxToken.matchSub(this.input, this.position)) {
-                var p = rxToken.matchedPos();
-                this.position = p.pos + p.len;
+            if (matchAnchoredRx(rxToken, this.input, this.position)) {
+                updatePosition(rxToken.matchedPos());
 
                 if (rxToken.matched(1) != null) { /* comment */
                     this.state = State.NewLine;
