@@ -6,6 +6,7 @@ private enum State {
     NewLine;
     SkipSpaces;
     MiddleOfLine;
+    Verbatim;
 }
 class Tokenizer
 {
@@ -63,6 +64,16 @@ class Tokenizer
     {
         var rxToken = scope.isAtLetter ? this.rxToken_atletter : this.rxToken_atother;
         while (this.position < this.input.length) {
+            if (this.state == State.Verbatim) {
+                var c = this.input.charAt(this.position);
+                ++this.position;
+                ++this.currentColumn;
+                if (c == '\n') {
+                    ++this.currentLine;
+                    this.currentColumn = 0;
+                }
+                return new Token(Character(c), this.getCurrentLocation());
+            }
             if (this.state == State.NewLine || this.state == State.SkipSpaces) {
                 if (matchAnchoredRx(this.rxSpaces, this.input, this.position)) {
                     updatePosition(this.rxSpaces.matchedPos());
@@ -133,6 +144,14 @@ class Tokenizer
             }
         }
         return null;
+    }
+    public function enterVerbatimMode()
+    {
+        this.state = State.Verbatim;
+    }
+    public function leaveVerbatimMode()
+    {
+        this.state = State.MiddleOfLine;
     }
     public function nextRawChar(): Null<String>
     {
