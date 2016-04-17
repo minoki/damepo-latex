@@ -21,7 +21,7 @@ typedef ExpansionToken = {
 }
 class ExpansionProcessor
 {
-    var tokenizer: Tokenizer;
+    public var tokenizer: Tokenizer;
     public var currentScope: Scope;
     var pendingTokens: Array<ExpansionToken>;
     public var recursionLimit: Int;
@@ -34,7 +34,7 @@ class ExpansionProcessor
         this.recursionLimit = recursionLimit;
         this.pendingTokenLimit = pendingTokenLimit;
     }
-    private function hasPendingToken(): Bool
+    public function hasPendingToken(): Bool
     {
         return this.pendingTokens.length > 0;
     }
@@ -68,7 +68,7 @@ class ExpansionProcessor
             }
         }
     }
-    private function nextToken(): Null<ExpansionToken>
+    public function nextToken(): Null<ExpansionToken>
     {
         if (this.pendingTokens.length > 0) {
             return this.pendingTokens.shift();

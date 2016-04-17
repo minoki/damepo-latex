@@ -189,6 +189,60 @@ class MakeatCommand implements ExecutableCommand
         return [];
     }
 }
+class VerbCommand implements ExecutableCommand
+{
+    public function new()
+    {
+    }
+    private static function characterValue(token: Null<ExpansionToken>): String
+    {
+        if (token == null) {
+            throw new LaTeXError("unexpected end of input during \\verb");
+        }
+        return switch (token.token.value) {
+        case Character(c): c;
+        default:
+            throw new LaTeXError("invalid token in \\verb");
+        };
+    }
+    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
+    {
+        var exp = processor.expansionProcessor;
+        exp.tokenizer.enterVerbatimMode();
+        var isInsideMacro = exp.hasPendingToken();
+        var delimiterToken = exp.nextToken();
+        if (delimiterToken == null) {
+            throw new LaTeXError("\\verb: argument missing");
+        }
+        var delimiter = characterValue(delimiterToken);
+        var star = false;
+        if (delimiter == '*') {
+            star = true;
+            isInsideMacro = exp.hasPendingToken();
+            delimiterToken = exp.nextToken();
+            delimiter = characterValue(delimiterToken);
+        }
+        var name = star ? "\\verb*" : "\\verb";
+        if (isInsideMacro) {
+            throw new LaTeXError(name + " cannot be used inside macro argument");
+        }
+        if (delimiter == ' ') {
+            throw new LaTeXError("there must not be a space character between " + name + " and the delimiter");
+        }
+        var result = new StringBuf();
+        while (true) {
+            var t = exp.nextToken();
+            var c = characterValue(t);
+            if (c == delimiter) {
+                exp.tokenizer.leaveVerbatimMode();
+                return [VerbCommand(result.toString(), star)];
+            } else if (c == '\n') {
+                throw new LaTeXError(name + " cannot contain a newline");
+            }
+            result.add(c);
+        }
+    }
+}
 class UnsupportedCommand implements ExecutableCommand
 {
     var name: String;
@@ -227,6 +281,7 @@ class DefaultScope
         scope.defineExecutableCommand(ControlSequence("providecommand"), new ProvidecommandCommand());
         scope.defineExecutableCommand(ControlSequence("makeatletter"), new MakeatCommand(true));
         scope.defineExecutableCommand(ControlSequence("makeatother"), new MakeatCommand(false));
+        scope.defineExecutableCommand(ControlSequence("verb"), new VerbCommand());
     }
     public static function getDefaultScope(): Scope
     {

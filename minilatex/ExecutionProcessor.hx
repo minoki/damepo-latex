@@ -12,6 +12,7 @@ enum ExecutionResult
     Subscript;
     Superscript;
     MathShift;
+    VerbCommand(content: String, star: Bool);
 }
 class ExecutionProcessor
 {
