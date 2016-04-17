@@ -6,6 +6,30 @@ import minilatex.ExecutionProcessor;
 import minilatex.Scope;
 import minilatex.Error;
 import minilatex.Command;
+using Main.ExpansionResultExtension;
+
+class ExpansionResultExtension
+{
+    public static function toString(e: Null<ExpansionResult>)
+    {
+        return switch (e) {
+        case null:
+            "(null)";
+        case Character(c):
+            "Character(" + c + ")";
+        case UnknownCommand(name):
+            "UnknownCommand(" + name.toString() + ")";
+        case ExecutableCommand(name, _):
+            "ExecutableCommand(" + name.toString() + ")";
+        case BeginGroup: "{";
+        case EndGroup: "}";
+        case AlignmentTab: "&";
+        case Subscript: "_";
+        case Superscript: "^";
+        case MathShift: "$";
+        }
+    }
+}
 
 class ExpansionTestCase extends haxe.unit.TestCase
 {
@@ -34,7 +58,11 @@ class ExpansionTestCase extends haxe.unit.TestCase
     }
     function assertETEquals(expected: Null<ExpansionResult>, actual: Null<ExpansionResult>, ?c: haxe.PosInfos)
     {
-        assertTrue(expansionResultEquals(expected, actual), c);
+        if (!expansionResultEquals(expected, actual)) {
+            assertEquals(expected.toString(), actual.toString(), c);
+        } else {
+            assertTrue(true, c);
+        }
     }
     static function executionResultEquals(x: Null<ExecutionResult>, y: Null<ExecutionResult>): Bool
     {
