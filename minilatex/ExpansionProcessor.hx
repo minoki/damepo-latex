@@ -315,4 +315,22 @@ class ExpansionProcessor implements IExpansionProcessor
         var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.recursionLimit, this.pendingTokenLimit);
         return localProcessor.expandAll();
     }
+    public function expandArgument(): Null<Array<Token>>
+    {
+        var a = this.readArgument();
+        return if (a != null) {
+            this.expandCompletely(a);
+        } else {
+            null;
+        };
+    }
+    public function expandOptionalArgument(defaultValue: Array<Token> = null): Null<Array<Token>>
+    {
+        var a = this.readOptionalArgument(defaultValue);
+        return if (a != null) {
+            this.expandCompletely(a);
+        } else {
+            null;
+        };
+    }
 }
