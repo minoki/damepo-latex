@@ -17,9 +17,11 @@ enum ExecutionResult
 class ExecutionProcessor
 {
     public var expansionProcessor: ExpansionProcessor;
+    var environmentStack: Array<String>;
     public function new(expansionProcessor: ExpansionProcessor)
     {
         this.expansionProcessor = expansionProcessor;
+        this.environmentStack = [];
     }
     public function processAll(): Array<ExecutionResult>
     {
@@ -61,6 +63,26 @@ class ExecutionProcessor
             case ExecutableCommand(name, command):
                 result[0] = result[0].concat(command.doCommand(this));
             }
+        }
+    }
+    public function beginEnvironment(name: String)
+    {
+        this.environmentStack.push(name);
+    }
+    public function endEnvironment(name: String)
+    {
+        var lastEnv = this.environmentStack.pop();
+        if (lastEnv == null) {
+            throw new LaTeXError("No matching \\begin{" + name + "} for \\end{" + name + "}");
+        } else if (lastEnv != name) {
+            throw new LaTeXError("\\begin{" + lastEnv + "} ended by \\end{" + name + "}");
+        }
+    }
+    public function checkEnvironment()
+    {
+        if (this.environmentStack.length > 0) {
+            var name = this.environmentStack[this.environmentStack.length - 1];
+            throw new LaTeXError("\\begin{" + name + "} is not ended");
         }
     }
 }

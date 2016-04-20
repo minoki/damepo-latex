@@ -5,6 +5,7 @@ import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
+import minilatex.Environment;
 import minilatex.Util;
 using Token.TokenValueExtender;
 using Token.TokenUtil;
@@ -258,6 +259,12 @@ class DefaultScope
         scope.defineExecutableCommand(ControlSequence("makeatletter"), new MakeatCommand(true));
         scope.defineExecutableCommand(ControlSequence("makeatother"), new MakeatCommand(false));
         scope.defineExecutableCommand(ControlSequence("verb"), new VerbCommand());
+        scope.defineExecutableCommand(ControlSequence("newenvironment"), new NewenvironmentCommand());
+        scope.defineExecutableCommand(ControlSequence("renewenvironment"), new RenewenvironmentCommand());
+        scope.defineExpandableCommand(ControlSequence("begin"), new BeginEnvironmentCommand());
+        scope.defineExpandableCommand(ControlSequence("end"), new EndEnvironmentCommand());
+        scope.defineExecutableCommand(ControlSequence("<begin environment>"), new InternalBeginEnvironmentCommand());
+        scope.defineExecutableCommand(ControlSequence("<end environment>"), new InternalEndEnvironmentCommand());
     }
     public static function getDefaultScope(): Scope
     {

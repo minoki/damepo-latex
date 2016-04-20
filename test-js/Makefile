@@ -7,6 +7,7 @@ lib_src = \
  ../minilatex/ExpansionProcessor.hx \
  ../minilatex/ExecutionProcessor.hx \
  ../minilatex/Command.hx \
+ ../minilatex/Environment.hx \
  ../minilatex/Error.hx \
  ../minilatex/Util.hx
 

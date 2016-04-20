@@ -30,8 +30,10 @@ class ExpansionToken
 }
 interface IExpansionProcessor
 {
+    function getCurrentScope(): Scope;
     function nextToken(): Null<ExpansionToken>;
     function unreadExpansionToken(t: ExpansionToken): Void;
+    function expandCompletely(tokens: Array<Token>): Array<Token>;
 }
 class ExpansionProcessorUtil
 {
@@ -137,6 +139,24 @@ class ExpansionProcessorUtil
             return defaultValue;
         }
     }
+    public static function expandArgument(p: IExpansionProcessor): Null<Array<Token>>
+    {
+        var a = p.readArgument();
+        return if (a != null) {
+            p.expandCompletely(a);
+        } else {
+            null;
+        };
+    }
+    public static function expandOptionalArgument(p: IExpansionProcessor, defaultValue: Array<Token> = null): Null<Array<Token>>
+    {
+        var a = p.readOptionalArgument(defaultValue);
+        return if (a != null) {
+            p.expandCompletely(a);
+        } else {
+            null;
+        };
+    }
 }
 class LocalExpansionProcessor implements IExpansionProcessor
 {
@@ -150,6 +170,10 @@ class LocalExpansionProcessor implements IExpansionProcessor
         this.scope = scope;
         this.recursionLimit = recursionLimit;
         this.pendingTokenLimit = pendingTokenLimit + tokens.length;
+    }
+    public function getCurrentScope()
+    {
+        return this.scope;
     }
     public function nextToken(): Null<ExpansionToken>
     {
@@ -204,6 +228,11 @@ class LocalExpansionProcessor implements IExpansionProcessor
         }
         return result;
     }
+    public function expandCompletely(tokens: Array<Token>): Array<Token>
+    {
+        var localProcessor = new LocalExpansionProcessor(tokens, this.scope, this.recursionLimit, this.pendingTokenLimit);
+        return localProcessor.expandAll();
+    }
 }
 class ExpansionProcessor implements IExpansionProcessor
 {
@@ -219,6 +248,10 @@ class ExpansionProcessor implements IExpansionProcessor
         this.pendingTokens = [];
         this.recursionLimit = recursionLimit;
         this.pendingTokenLimit = pendingTokenLimit;
+    }
+    public function getCurrentScope()
+    {
+        return this.currentScope;
     }
     public function hasPendingToken(): Bool
     {
@@ -312,23 +345,5 @@ class ExpansionProcessor implements IExpansionProcessor
     {
         var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.recursionLimit, this.pendingTokenLimit);
         return localProcessor.expandAll();
-    }
-    public function expandArgument(): Null<Array<Token>>
-    {
-        var a = this.readArgument();
-        return if (a != null) {
-            this.expandCompletely(a);
-        } else {
-            null;
-        };
-    }
-    public function expandOptionalArgument(defaultValue: Array<Token> = null): Null<Array<Token>>
-    {
-        var a = this.readOptionalArgument(defaultValue);
-        return if (a != null) {
-            this.expandCompletely(a);
-        } else {
-            null;
-        };
     }
 }

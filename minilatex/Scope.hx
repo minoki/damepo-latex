@@ -17,20 +17,17 @@ interface ExecutableCommand
 {
     public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>;
 }
-interface Environment
-{
-}
 class Scope
 {
     public var parent: Scope;
     var commands: Map<TokenValue, Command>;
-    var environments: Map<String, Environment>;
+    var environments: Array<String>;
     public var isAtLetter: Bool;
     public function new(parent)
     {
         this.parent = parent;
         this.commands = new Map();
-        this.environments = new Map();
+        this.environments = [];
         this.isAtLetter = parent != null && parent.isAtLetter;
     }
     public function isCommandDefined(name: TokenValue): Bool
@@ -67,15 +64,20 @@ class Scope
     {
         this.defineCommand(name, ExecutableCommand(definition));
     }
-    public function lookupEnvironment(name: String): Environment
+    public function isEnvironmentDefined(name: String): Bool
     {
-        if (this.environments.exists(name)) {
-            return this.environments.get(name);
-        } else if (this.parent != null) {
-            return this.parent.lookupEnvironment(name);
-        } else {
-            return null;
+        var scope = this;
+        while (scope != null) {
+            if (scope.environments.indexOf(name) != -1) {
+                return true;
+            }
+            scope = scope.parent;
         }
+        return false;
+    }
+    public function defineEnvironment(name: String)
+    {
+        this.environments.push(name);
     }
     public function setAtLetter(value: Bool)
     {
