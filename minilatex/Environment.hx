@@ -1,5 +1,4 @@
 package minilatex;
-import haxe.ds.Option;
 import minilatex.Token;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
