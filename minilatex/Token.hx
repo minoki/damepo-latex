@@ -14,10 +14,17 @@ class TokenValueExtender
         };
     }
 }
-typedef TokenLocation = {
-    var filename: String;
-    var line: Int;
-    var column: Int;
+class TokenLocation
+{
+    public var filename: String;
+    public var line: Int;
+    public var column: Int;
+    public function new(filename: String, line: Int, column: Int)
+    {
+        this.filename = filename;
+        this.line = line;
+        this.column = column;
+    }
 }
 class TokenLocationExtender
 {

@@ -58,7 +58,7 @@ class Tokenizer
     }
     function getCurrentLocation(): TokenLocation
     {
-        return {filename: this.filename, line: this.currentLine, column: this.currentColumn};
+        return new TokenLocation(this.filename, this.currentLine, this.currentColumn);
     }
     public function readToken(scope: Scope): Null<Token>
     {
