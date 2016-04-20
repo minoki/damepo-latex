@@ -38,6 +38,22 @@ class CommandUtil
         case _: None;
         }
     }
+    public static function digitValueN(c: String): Null<Int>
+    {
+        return switch (c) {
+        case '0': 0;
+        case '1': 1;
+        case '2': 2;
+        case '3': 3;
+        case '4': 4;
+        case '5': 5;
+        case '6': 6;
+        case '7': 7;
+        case '8': 8;
+        case '9': 9;
+        case _: null;
+        }
+    }
 }
 class UserCommand implements ExpandableCommand
 {
@@ -130,6 +146,20 @@ class NewcommandCommand implements ExecutableCommand
         case _: None;
         };
     }
+    private static inline function tokenListToIntN(tokens: Array<Token>, defaultValue: Int): Null<Int>
+    {
+        if (tokens == null) {
+            return defaultValue;
+        }
+        if (tokens.length != 1) {
+            return null;
+        }
+        return switch (tokens[0].value) {
+        case Character(x):
+            CommandUtil.digitValueN(x);
+        case _: null;
+        };
+    }
     public function doCommand(processor: ExecutionProcessor)
     {
         var cmd = processor.expansionProcessor.readArgument();
@@ -137,12 +167,9 @@ class NewcommandCommand implements ExecutableCommand
         case [x]: x.value;
         case _: throw new LaTeXError(this.name + ": invalid command name");
         };
-        var args = processor.expansionProcessor.readOptionalArgument();
-        var args_expanded = processor.expansionProcessor.expandCompletely.liftNull(args);
-        var numberOfArguments = switch (tokenListToInt(args_expanded, 0)) {
-        case Some(n): n;
-        default: throw new LaTeXError(this.name + ": invalid number of arguments");
-        };
+        var args = processor.expansionProcessor.expandOptionalArgument();
+        var numberOfArguments = tokenListToIntN(args, 0)
+            .throwIfNull(new LaTeXError(this.name + ": invalid number of arguments"));
         var opt = processor.expansionProcessor.readOptionalArgument();
         var definitionBody = processor.expansionProcessor.readArgument();
         this.doDefineCommand(processor, name, numberOfArguments, opt, definitionBody);
