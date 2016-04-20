@@ -31,26 +31,14 @@ class ExpansionToken
 interface IExpansionProcessor
 {
     function nextToken(): Null<ExpansionToken>;
-    function unreadNonNullExpansionToken(t: ExpansionToken): Void;
+    function unreadExpansionToken(t: ExpansionToken): Void;
 }
 class ExpansionProcessorUtil
 {
     public static inline function unreadTokens(p: IExpansionProcessor, ts: Array<Token>, depth: Int)
     {
         for (t in ts.reverseIterator()) {
-            unreadToken(p, t, depth);
-        }
-    }
-    public static inline function unreadToken(p: IExpansionProcessor, t: Null<Token>, depth: Int)
-    {
-        if (t != null) {
-            p.unreadNonNullExpansionToken(new ExpansionToken(t, depth));
-        }
-    }
-    public static function unreadExpansionToken(p: IExpansionProcessor, t: Null<ExpansionToken>)
-    {
-        if (t != null) {
-            p.unreadNonNullExpansionToken(t);
+            p.unreadExpansionToken(new ExpansionToken(t, depth));
         }
     }
     public static function nextNonspaceToken(p: IExpansionProcessor): Null<ExpansionToken>
@@ -161,7 +149,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
             return null;
         }
     }
-    public function unreadNonNullExpansionToken(t: ExpansionToken)
+    public function unreadExpansionToken(t: ExpansionToken)
     {
         this.tokens.unshift(t);
         if (this.tokens.length > this.pendingTokenLimit) {
@@ -226,7 +214,7 @@ class ExpansionProcessor implements IExpansionProcessor
     {
         return this.pendingTokens.length > 0;
     }
-    public function unreadNonNullExpansionToken(t: ExpansionToken)
+    public function unreadExpansionToken(t: ExpansionToken)
     {
         this.pendingTokens.unshift(t);
         if (this.pendingTokens.length > this.pendingTokenLimit) {
