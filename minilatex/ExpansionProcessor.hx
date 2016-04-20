@@ -140,6 +140,73 @@ class ExpansionProcessorUtil
         }
     }
 }
+class LocalExpansionProcessor implements IExpansionProcessor
+{
+    var tokens: Array<ExpansionToken>;
+    var scope: Scope;
+    var recursionLimit: Int;
+    var pendingTokenLimit: Int;
+    public function new(tokens: Array<Token>, scope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    {
+        this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
+        this.scope = scope;
+        this.recursionLimit = recursionLimit;
+        this.pendingTokenLimit = pendingTokenLimit + tokens.length;
+    }
+    public function nextToken(): Null<ExpansionToken>
+    {
+        if (this.tokens.length > 0) {
+            return this.tokens.shift();
+        } else {
+            return null;
+        }
+    }
+    public function unreadNonNullExpansionToken(t: ExpansionToken)
+    {
+        this.tokens.unshift(t);
+        if (this.tokens.length > this.pendingTokenLimit) {
+            throw new LaTeXError("token list too long");
+        }
+    }
+    public function expand(): Null<Token>
+    {
+        while (true) {
+            var t = this.nextToken();
+            if (t == null) {
+                return null;
+            }
+            switch (t.token.value) {
+            case Character('#'):
+                throw new LaTeXError("unexpected parameter char '#'");
+            case Character('~') | ControlSequence(_):
+                switch (this.scope.lookupCommand(t.token.value)) {
+                case null:
+                    return t.token;
+                case ExpandableCommand(command):
+                    if (t.depth > this.recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    var expanded = command.doExpand(this);
+                    this.unreadTokens(expanded, t.depth + 1);
+                    /* continue */
+                case ExecutableCommand(command):
+                    throw new LaTeXError("you cannot execute a command here");
+                }
+            default:
+                return t.token;
+            }
+        }
+    }
+    public function expandAll(): Array<Token>
+    {
+        var t: Token;
+        var result: Array<Token> = [];
+        while ((t = this.expand()) != null) {
+            result.push(t);
+        }
+        return result;
+    }
+}
 class ExpansionProcessor implements IExpansionProcessor
 {
     public var tokenizer: Tokenizer;
@@ -242,5 +309,10 @@ class ExpansionProcessor implements IExpansionProcessor
     public function leaveScope()
     {
         this.currentScope = this.currentScope.parent;
+    }
+    public function expandCompletely(tokens: Array<Token>): Array<Token>
+    {
+        var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.recursionLimit, this.pendingTokenLimit);
+        return localProcessor.expandAll();
     }
 }
