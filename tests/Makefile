@@ -7,7 +7,8 @@ lib_src = \
  ../minilatex/ExpansionProcessor.hx \
  ../minilatex/ExecutionProcessor.hx \
  ../minilatex/Command.hx \
- ../minilatex/Error.hx
+ ../minilatex/Error.hx \
+ ../minilatex/Util.hx
 
 test-neko: Main.hx $(lib_src)
 	haxe -main Main -cp .. -x test

@@ -3,6 +3,8 @@ import minilatex.Token;
 import minilatex.Scope;
 import minilatex.Tokenizer;
 import minilatex.Error;
+import minilatex.Util;
+using Util.ArrayExtender;
 enum ExpansionResult
 {
     Character(c: String);
@@ -46,9 +48,8 @@ class ExpansionProcessor
     }
     private function unreadTokens(ts: Array<Token>, depth: Int)
     {
-        var i = ts.length;
-        while (i > 0) {
-            this.unreadToken(ts[--i], depth);
+        for (t in ts.reverseIterator()) {
+            unreadToken(p, t, depth);
         }
     }
     private function unreadToken(t: Null<Token>, depth: Int)
