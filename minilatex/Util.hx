@@ -24,3 +24,14 @@ class ArrayExtender
         return new ArrayReverseIterator(array);
     }
 }
+class NullExtender
+{
+    public static inline function mapNull<T, U>(x: Null<T>, f: T -> U): Null<U>
+    {
+        return x == null ? null : f(x);
+    }
+    public static inline function liftNull<T, U>(f: T -> U, x: Null<T>): Null<U>
+    {
+        return x == null ? null : f(x);
+    }
+}
