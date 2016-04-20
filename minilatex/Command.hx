@@ -6,6 +6,8 @@ import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
 import minilatex.Util;
+using Token.TokenValueExtender;
+using Token.TokenUtil;
 using Command.ScopeExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
 using Util.NullExtender;
@@ -20,64 +22,40 @@ class ScopeExtender
         scope.defineExecutableCommand(ControlSequence(name), new UnsupportedTeXPrimitive(name));
     }
 }
-class CommandUtil
-{
-    public static function digitValue(c: String): Option<Int>
-    {
-        return switch (c) {
-        case '0': Some(0);
-        case '1': Some(1);
-        case '2': Some(2);
-        case '3': Some(3);
-        case '4': Some(4);
-        case '5': Some(5);
-        case '6': Some(6);
-        case '7': Some(7);
-        case '8': Some(8);
-        case '9': Some(9);
-        case _: None;
-        }
-    }
-    public static function digitValueN(c: String): Null<Int>
-    {
-        return switch (c) {
-        case '0': 0;
-        case '1': 1;
-        case '2': 2;
-        case '3': 3;
-        case '4': 4;
-        case '5': 5;
-        case '6': 6;
-        case '7': 7;
-        case '8': 8;
-        case '9': 9;
-        case _: null;
-        }
-    }
-}
 class UserCommand implements ExpandableCommand
 {
+    var name: TokenValue;
     var numberOfArguments: Int;
     var defaultValueForOptionalArgument: Null<Array<Token>>;
     var definitionBody: Array<Token>;
-    public function new(numberOfArguments, defaultValueForOptionalArgument, definitionBody)
+    var isLong: Bool;
+    public function new(name: TokenValue, numberOfArguments, defaultValueForOptionalArgument, definitionBody, isLong)
     {
+        this.name = name;
         this.numberOfArguments = numberOfArguments;
         this.defaultValueForOptionalArgument = defaultValueForOptionalArgument;
         this.definitionBody = definitionBody;
+        this.isLong = isLong;
     }
     public function doExpand(processor: IExpansionProcessor)
     {
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];
         if (remainingArguments > 0 && this.defaultValueForOptionalArgument != null) {
-            arguments.push(processor.readOptionalArgument(this.defaultValueForOptionalArgument));
+            var arg = processor.readOptionalArgument(this.defaultValueForOptionalArgument);
+            if (!this.isLong) {
+                arg.checkNoPar(this.name.toString());
+            }
+            arguments.push(arg);
             --remainingArguments;
         }
         while (remainingArguments > 0) {
             var arg = processor.readArgument();
             if (arg == null) {
                 throw new LaTeXError("user-defined command: missing arguments");
+            }
+            if (!this.isLong) {
+                arg.checkNoPar(this.name.toString());
             }
             arguments.push(arg);
             --remainingArguments;
@@ -96,9 +74,9 @@ class UserCommand implements ExpandableCommand
                 case Character('#'):
                     result.push(u);
                 case Character(c):
-                    var index = switch (CommandUtil.digitValue(c)) {
-                    case Some(i) if (i > 0): i;
-                    default: throw new LaTeXError("user-defined command: invalid parameter character");
+                    var index = TokenUtil.digitValue(c);
+                    if (index == null || index <= 0) {
+                        throw new LaTeXError("user-defined command: invalid parameter character");
                     };
                     if (index > this.numberOfArguments) {
                         throw new LaTeXError("user-defined command: parameter out of range");
@@ -121,58 +99,28 @@ class NewcommandCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
     {
         if (processor.expansionProcessor.currentScope.isCommandDefined(name)) {
-            throw new LaTeXError("\\newcommand: command " + (switch (name) {
-                    case ControlSequence(x): "\\" + x;
-                    case Character(x): x;
-                    }) + " is already defined");
+            throw new LaTeXError("\\newcommand: command " + name.toString() + " is already defined");
         } else {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
         }
-    }
-    private static inline function tokenListToInt(tokens: Array<Token>, defaultValue: Int): Option<Int>
-    {
-        if (tokens == null) {
-            return Some(defaultValue);
-        }
-        if (tokens.length != 1) {
-            return None;
-        }
-        return switch (tokens[0].value) {
-        case Character(x):
-            CommandUtil.digitValue(x);
-        case _: None;
-        };
-    }
-    private static inline function tokenListToIntN(tokens: Array<Token>, defaultValue: Int): Null<Int>
-    {
-        if (tokens == null) {
-            return defaultValue;
-        }
-        if (tokens.length != 1) {
-            return null;
-        }
-        return switch (tokens[0].value) {
-        case Character(x):
-            CommandUtil.digitValueN(x);
-        case _: null;
-        };
     }
     public function doCommand(processor: ExecutionProcessor)
     {
-        var cmd = processor.expansionProcessor.readArgument();
+        var isLong = !processor.expansionProcessor.hasStar();
+        var cmd = processor.expansionProcessor.readArgument().checkNoPar(this.name);
         var name = switch (cmd) {
         case [x]: x.value;
         case _: throw new LaTeXError(this.name + ": invalid command name");
         };
-        var args = processor.expansionProcessor.expandOptionalArgument();
-        var numberOfArguments = tokenListToIntN(args, 0)
-            .throwIfNull(new LaTeXError(this.name + ": invalid number of arguments"));
+        var args = processor.expansionProcessor.expandOptionalArgument().checkNoPar(this.name);
+        var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args).throwIfNull(new LaTeXError(this.name + ": invalid number of arguments"));
         var opt = processor.expansionProcessor.readOptionalArgument();
         var definitionBody = processor.expansionProcessor.readArgument();
-        this.doDefineCommand(processor, name, numberOfArguments, opt, definitionBody);
+        var command = new UserCommand(name, numberOfArguments, opt, definitionBody, isLong);
+        this.doDefineCommand(processor, name, command);
         return [];
     }
 }
@@ -182,15 +130,12 @@ class RenewcommandCommand extends NewcommandCommand
     {
         super("\\renewcommand");
     }
-    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
     {
         if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
-            throw new LaTeXError("\\renewcommand: command " + (switch (name) {
-                    case ControlSequence(x): "\\" + x;
-                    case Character(x): x;
-                    }) + " is not defined");
+            throw new LaTeXError("\\renewcommand: command " + name.toString() + " is not defined");
         } else {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
         }
     }
 }
@@ -200,10 +145,10 @@ class ProvidecommandCommand extends NewcommandCommand
     {
         super("\\providecommand");
     }
-    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, numberOfArguments: Int, opt: Null<Array<Token>>, definitionBody: Array<Token>)
+    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
     {
         if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, new UserCommand(numberOfArguments, opt, definitionBody));
+            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
         }
     }
 }

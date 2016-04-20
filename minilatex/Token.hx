@@ -1,4 +1,5 @@
 package minilatex;
+import minilatex.Error;
 enum TokenValue
 {
     Character(c: String);
@@ -49,5 +50,65 @@ class Token
     public function toString(): String
     {
         return TokenValueExtender.toString(this.value);
+    }
+}
+class TokenUtil
+{
+    public static function containsParagraphSeparator(a: Array<Token>): Bool
+    {
+        for (t in a) {
+            switch (t.value) {
+            case ControlSequence("par"):
+                return true;
+            default:
+            }
+        }
+        return false;
+    }
+    public static function checkNoPar(a: Null<Array<Token>>, name: String)
+    {
+        if (a != null && containsParagraphSeparator(a)) {
+            throw new LaTeXError("Paragraph ended before " + name + " was complete");
+        }
+        return a;
+    }
+    public static function digitValue(c: String): Null<Int>
+    {
+        return switch (c) {
+        case '0': 0;
+        case '1': 1;
+        case '2': 2;
+        case '3': 3;
+        case '4': 4;
+        case '5': 5;
+        case '6': 6;
+        case '7': 7;
+        case '8': 8;
+        case '9': 9;
+        case _: null;
+        }
+    }
+    public static function tokenListToInt(tokens: Array<Token>): Null<Int>
+    {
+        if (tokens.length != 1) {
+            return null;
+        }
+        return switch (tokens[0].value) {
+        case Character(x): digitValue(x);
+        default: null;
+        };
+    }
+    public static function tokenListToName(tokens: Array<Token>): Null<String>
+    {
+        var s = new StringBuf();
+        for (t in tokens) {
+            switch (t.value) {
+            case Character(c):
+                s.add(c);
+            default:
+                return null;
+            }
+        }
+        return s.toString();
     }
 }

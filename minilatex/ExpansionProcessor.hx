@@ -60,6 +60,16 @@ class ExpansionProcessorUtil
             }
         }
     }
+    public static function hasStar(p: IExpansionProcessor): Bool
+    {
+        var t = p.nextToken();
+        return t != null && switch (t.token.value) {
+        case Character('*'): true;
+        default:
+            p.unreadExpansionToken(t);
+            false;
+        };
+    }
     public static function readArgument(p: IExpansionProcessor): Null<Array<Token>>
     {
         var t = p.nextNonspaceToken();
