@@ -6,6 +6,7 @@ import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
 using Command.ScopeExtender;
+using ExpansionProcessor.ExpansionProcessorUtil;
 class ScopeExtender
 {
     public static function defineUnsupportedCommand(scope: Scope, name: String)
@@ -47,7 +48,7 @@ class UserCommand implements ExpandableCommand
         this.defaultValueForOptionalArgument = defaultValueForOptionalArgument;
         this.definitionBody = definitionBody;
     }
-    public function doExpand(processor: ExpansionProcessor)
+    public function doExpand(processor: IExpansionProcessor)
     {
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];

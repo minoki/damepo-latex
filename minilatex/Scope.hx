@@ -11,7 +11,7 @@ enum Command
 }
 interface ExpandableCommand
 {
-    public function doExpand(processor: ExpansionProcessor): Array<Token>;
+    public function doExpand(processor: IExpansionProcessor): Array<Token>;
 }
 interface ExecutableCommand
 {

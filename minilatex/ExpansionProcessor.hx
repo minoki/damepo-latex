@@ -5,6 +5,7 @@ import minilatex.Tokenizer;
 import minilatex.Error;
 import minilatex.Util;
 using Util.ArrayExtender;
+using ExpansionProcessor.ExpansionProcessorUtil;
 enum ExpansionResult
 {
     Character(c: String);
@@ -27,66 +28,35 @@ class ExpansionToken
         this.depth = depth;
     }
 }
-class ExpansionProcessor
+interface IExpansionProcessor
 {
-    public var tokenizer: Tokenizer;
-    public var currentScope: Scope;
-    var pendingTokens: Array<ExpansionToken>;
-    public var recursionLimit: Int;
-    public var pendingTokenLimit: Int;
-    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
-    {
-        this.tokenizer = tokenizer;
-        this.currentScope = initialScope;
-        this.pendingTokens = [];
-        this.recursionLimit = recursionLimit;
-        this.pendingTokenLimit = pendingTokenLimit;
-    }
-    public function hasPendingToken(): Bool
-    {
-        return this.pendingTokens.length > 0;
-    }
-    private function unreadTokens(ts: Array<Token>, depth: Int)
+    function nextToken(): Null<ExpansionToken>;
+    function unreadNonNullExpansionToken(t: ExpansionToken): Void;
+}
+class ExpansionProcessorUtil
+{
+    public static inline function unreadTokens(p: IExpansionProcessor, ts: Array<Token>, depth: Int)
     {
         for (t in ts.reverseIterator()) {
             unreadToken(p, t, depth);
         }
     }
-    private function unreadToken(t: Null<Token>, depth: Int)
+    public static inline function unreadToken(p: IExpansionProcessor, t: Null<Token>, depth: Int)
     {
         if (t != null) {
-            this.pendingTokens.unshift(new ExpansionToken(t, depth));
-            if (this.pendingTokens.length > this.pendingTokenLimit) {
-                throw new LaTeXError("token list too long");
-            }
+            p.unreadNonNullExpansionToken(new ExpansionToken(t, depth));
         }
     }
-    private function unreadExpansionToken(t: Null<ExpansionToken>)
+    public static function unreadExpansionToken(p: IExpansionProcessor, t: Null<ExpansionToken>)
     {
         if (t != null) {
-            this.pendingTokens.unshift(t);
-            if (this.pendingTokens.length > this.pendingTokenLimit) {
-                throw new LaTeXError("token list too long");
-            }
+            p.unreadNonNullExpansionToken(t);
         }
     }
-    public function nextToken(): Null<ExpansionToken>
-    {
-        if (this.pendingTokens.length > 0) {
-            return this.pendingTokens.shift();
-        } else {
-            var token = this.tokenizer.readToken(this.currentScope);
-            if (token != null) {
-                return new ExpansionToken(token, 0);
-            } else {
-                return null;
-            }
-        }
-    }
-    private function nextNonspaceToken(): Null<ExpansionToken>
+    public static function nextNonspaceToken(p: IExpansionProcessor): Null<ExpansionToken>
     {
         while (true) {
-            var t = this.nextToken();
+            var t = p.nextToken();
             if (t != null) {
                 switch (t.token.value) {
                 case Character(c):
@@ -102,9 +72,9 @@ class ExpansionProcessor
             }
         }
     }
-    public function readArgument(): Null<Array<Token>>
+    public static function readArgument(p: IExpansionProcessor): Null<Array<Token>>
     {
-        var t = this.nextNonspaceToken();
+        var t = p.nextNonspaceToken();
         if (t == null) {
             return null;
         }
@@ -113,7 +83,7 @@ class ExpansionProcessor
             var a: Array<Token> = [];
             var count = 0;
             while (true) {
-                var u = this.nextToken();
+                var u = p.nextToken();
                 if (u == null) {
                     throw new LaTeXError("mismatched braces");
                 }
@@ -134,18 +104,18 @@ class ExpansionProcessor
             return [t.token];
         }
     }
-    public function readOptionalArgument(defaultValue: Array<Token> = null): Array<Token>
+    public static function readOptionalArgument(p: IExpansionProcessor, defaultValue: Array<Token> = null): Array<Token>
     {
-        var t = this.nextNonspaceToken();
+        var t = p.nextNonspaceToken();
         if (t == null) {
             return defaultValue;
         }
         switch (t.token.value) {
         case Character('['):
-            var a: Array<ExpansionToken> = [];
+            var a: Array<Token> = [];
             var count = 0;
             while (true) {
-                var t = this.nextToken();
+                var t = p.nextToken();
                 if (t == null) {
                     throw new LaTeXError("mismatched brackets");
                 }
@@ -158,15 +128,55 @@ class ExpansionProcessor
                     }
                 case Character(']'):
                     if (count == 0) {
-                        return a.map(function(u) { return u.token; });
+                        return a;
                     }
                 default:
                 }
-                a.push(t);
+                a.push(t.token);
             }
         default:
-            this.unreadExpansionToken(t);
+            p.unreadExpansionToken(t);
             return defaultValue;
+        }
+    }
+}
+class ExpansionProcessor implements IExpansionProcessor
+{
+    public var tokenizer: Tokenizer;
+    public var currentScope: Scope;
+    var pendingTokens: Array<ExpansionToken>;
+    public var recursionLimit: Int;
+    public var pendingTokenLimit: Int;
+    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    {
+        this.tokenizer = tokenizer;
+        this.currentScope = initialScope;
+        this.pendingTokens = [];
+        this.recursionLimit = recursionLimit;
+        this.pendingTokenLimit = pendingTokenLimit;
+    }
+    public function hasPendingToken(): Bool
+    {
+        return this.pendingTokens.length > 0;
+    }
+    public function unreadNonNullExpansionToken(t: ExpansionToken)
+    {
+        this.pendingTokens.unshift(t);
+        if (this.pendingTokens.length > this.pendingTokenLimit) {
+            throw new LaTeXError("token list too long");
+        }
+    }
+    public function nextToken(): Null<ExpansionToken>
+    {
+        if (this.pendingTokens.length > 0) {
+            return this.pendingTokens.shift();
+        } else {
+            var token = this.tokenizer.readToken(this.currentScope);
+            if (token != null) {
+                return new ExpansionToken(token, 0);
+            } else {
+                return null;
+            }
         }
     }
     public function expand(): Null<ExpansionResult>
