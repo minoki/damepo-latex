@@ -195,21 +195,7 @@ class ExpansionProcessor
                 return BeginGroup;
             case Character('}'):
                 return EndGroup;
-            case Character('~'): // active char
-                switch (this.currentScope.lookupCommand(t.token.value)) {
-                case null:
-                    return UnknownCommand(t.token);
-                case ExpandableCommand(command):
-                    if (t.depth > this.recursionLimit) {
-                        throw new LaTeXError("recursion too deep");
-                    }
-                    var expanded = command.doExpand(this);
-                    this.unreadTokens(expanded, t.depth + 1);
-                    // continue
-                case ExecutableCommand(command):
-                    return ExecutableCommand(t.token, command);
-                }
-            case ControlSequence(name):
+            case Character('~') | ControlSequence(_):
                 switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
                     return UnknownCommand(t.token);
