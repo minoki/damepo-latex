@@ -15,9 +15,15 @@ enum ExpansionResult
     Superscript;
     MathShift;
 }
-typedef ExpansionToken = {
-    var token: Token;
-    var depth: Int;
+class ExpansionToken
+{
+    public var token: Token;
+    public var depth: Int;
+    public function new(token: Token, depth: Int)
+    {
+        this.token = token;
+        this.depth = depth;
+    }
 }
 class ExpansionProcessor
 {
@@ -48,7 +54,7 @@ class ExpansionProcessor
     private function unreadToken(t: Null<Token>, depth: Int)
     {
         if (t != null) {
-            this.pendingTokens.unshift({token: t, depth: depth});
+            this.pendingTokens.unshift(new ExpansionToken(t, depth));
             if (this.pendingTokens.length > this.pendingTokenLimit) {
                 throw new LaTeXError("token list too long");
             }
@@ -70,7 +76,7 @@ class ExpansionProcessor
         } else {
             var token = this.tokenizer.readToken(this.currentScope);
             if (token != null) {
-                return {token: token, depth: 0};
+                return new ExpansionToken(token, 0);
             } else {
                 return null;
             }
