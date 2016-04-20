@@ -99,14 +99,6 @@ class NewcommandCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
-    {
-        if (processor.expansionProcessor.currentScope.isCommandDefined(name)) {
-            throw new LaTeXError("\\newcommand: command " + name.toString() + " is already defined");
-        } else {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
-        }
-    }
     public function doCommand(processor: ExecutionProcessor)
     {
         var isLong = !processor.expansionProcessor.hasStar();
@@ -120,8 +112,16 @@ class NewcommandCommand implements ExecutableCommand
         var opt = processor.expansionProcessor.readOptionalArgument();
         var definitionBody = processor.expansionProcessor.readArgument();
         var command = new UserCommand(name, numberOfArguments, opt, definitionBody, isLong);
-        this.doDefineCommand(processor, name, command);
+        this.doDefineCommand(processor.expansionProcessor.currentScope, name, command);
         return [];
+    }
+    public function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
+    {
+        if (scope.isCommandDefined(name)) {
+            throw new LaTeXError("\\newcommand: command " + name.toString() + " is already defined");
+        } else {
+            scope.defineExpandableCommand(name, command);
+        }
     }
 }
 class RenewcommandCommand extends NewcommandCommand
@@ -130,12 +130,12 @@ class RenewcommandCommand extends NewcommandCommand
     {
         super("\\renewcommand");
     }
-    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
+    public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
     {
-        if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
+        if (!scope.isCommandDefined(name)) {
             throw new LaTeXError("\\renewcommand: command " + name.toString() + " is not defined");
         } else {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
+            scope.defineExpandableCommand(name, command);
         }
     }
 }
@@ -145,10 +145,10 @@ class ProvidecommandCommand extends NewcommandCommand
     {
         super("\\providecommand");
     }
-    public override function doDefineCommand(processor: ExecutionProcessor, name: TokenValue, command: ExpandableCommand)
+    public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
     {
-        if (!processor.expansionProcessor.currentScope.isCommandDefined(name)) {
-            processor.expansionProcessor.currentScope.defineExpandableCommand(name, command);
+        if (!scope.isCommandDefined(name)) {
+            scope.defineExpandableCommand(name, command);
         }
     }
 }
