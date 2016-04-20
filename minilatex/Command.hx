@@ -5,8 +5,10 @@ import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
+import minilatex.Util;
 using Command.ScopeExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
+using Util.NullExtender;
 class ScopeExtender
 {
     public static function defineUnsupportedCommand(scope: Scope, name: String)
@@ -135,8 +137,9 @@ class NewcommandCommand implements ExecutableCommand
         case [x]: x.value;
         case _: throw new LaTeXError(this.name + ": invalid command name");
         };
-        // TODO: expand the content of args
-        var numberOfArguments = switch (tokenListToInt(processor.expansionProcessor.readOptionalArgument(), 0)) {
+        var args = processor.expansionProcessor.readOptionalArgument();
+        var args_expanded = processor.expansionProcessor.expandCompletely.liftNull(args);
+        var numberOfArguments = switch (tokenListToInt(args_expanded, 0)) {
         case Some(n): n;
         default: throw new LaTeXError(this.name + ": invalid number of arguments");
         };

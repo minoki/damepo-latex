@@ -152,6 +152,17 @@ class ExpansionTestCase extends haxe.unit.TestCase
         assertExecEquals(it.next(), Character("x"));
         assertFalse(it.hasNext());
     }
+    public function testCompleteExpansion()
+    {
+        var tokenizer = new Tokenizer("\\newcommand\\two{2}\\newcommand\\Two{\\two}\\newcommand{\\foo}[\\Two]{#2#1}\\foo{x}{y}");
+        var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope());
+        var executionProcessor = new ExecutionProcessor(expansionProcessor);
+        var result = executionProcessor.processAll();
+        var it = result.iterator();
+        assertExecEquals(it.next(), Character("y"));
+        assertExecEquals(it.next(), Character("x"));
+        assertFalse(it.hasNext());
+    }
 }
 
 class Main
