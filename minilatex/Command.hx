@@ -42,20 +42,14 @@ class UserCommand implements ExpandableCommand
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];
         if (remainingArguments > 0 && this.defaultValueForOptionalArgument != null) {
-            var arg = processor.readOptionalArgument(this.defaultValueForOptionalArgument);
-            if (!this.isLong) {
-                arg.checkNoPar(this.name.toString());
-            }
+            var arg = processor.readOptionalArgument(this.name, this.isLong, this.defaultValueForOptionalArgument);
             arguments.push(arg);
             --remainingArguments;
         }
         while (remainingArguments > 0) {
-            var arg = processor.readArgument();
+            var arg = processor.readArgument(this.name, this.isLong);
             if (arg == null) {
                 throw new LaTeXError("user-defined command: missing arguments");
-            }
-            if (!this.isLong) {
-                arg.checkNoPar(this.name.toString());
             }
             arguments.push(arg);
             --remainingArguments;
@@ -94,23 +88,23 @@ class UserCommand implements ExpandableCommand
 }
 class NewcommandCommand implements ExecutableCommand
 {
-    var name: String;
-    public function new(name: String = "\\newcommand")
+    var name: TokenValue;
+    public function new(name = "newcommand")
     {
-        this.name = name;
+        this.name = ControlSequence(name);
     }
     public function doCommand(processor: ExecutionProcessor)
     {
         var isLong = !processor.expansionProcessor.hasStar();
-        var cmd = processor.expansionProcessor.readArgument().checkNoPar(this.name);
+        var cmd = processor.expansionProcessor.readArgument(this.name, false);
         var name = switch (cmd) {
         case [x]: x.value;
-        case _: throw new LaTeXError(this.name + ": invalid command name");
+        case _: throw new LaTeXError(this.name.toString() + ": invalid command name");
         };
-        var args = processor.expansionProcessor.expandOptionalArgument().checkNoPar(this.name);
-        var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args).throwIfNull(new LaTeXError(this.name + ": invalid number of arguments"));
-        var opt = processor.expansionProcessor.readOptionalArgument();
-        var definitionBody = processor.expansionProcessor.readArgument();
+        var args = processor.expansionProcessor.expandOptionalArgument(this.name, false);
+        var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args).throwIfNull(new LaTeXError(this.name.toString() + ": invalid number of arguments"));
+        var opt = processor.expansionProcessor.readOptionalArgument(this.name, true);
+        var definitionBody = processor.expansionProcessor.readArgument(this.name, true);
         var command = new UserCommand(name, numberOfArguments, opt, definitionBody, isLong);
         this.doDefineCommand(processor.expansionProcessor.currentScope, name, command);
         return [];
@@ -128,7 +122,7 @@ class RenewcommandCommand extends NewcommandCommand
 {
     public function new()
     {
-        super("\\renewcommand");
+        super("renewcommand");
     }
     public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
     {
@@ -143,7 +137,7 @@ class ProvidecommandCommand extends NewcommandCommand
 {
     public function new()
     {
-        super("\\providecommand");
+        super("providecommand");
     }
     public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
     {

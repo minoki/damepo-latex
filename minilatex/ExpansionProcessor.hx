@@ -4,6 +4,7 @@ import minilatex.Scope;
 import minilatex.Tokenizer;
 import minilatex.Error;
 import minilatex.Util;
+using Token.TokenValueExtender;
 using Util.ArrayExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
 enum ExpansionResult
@@ -72,7 +73,7 @@ class ExpansionProcessorUtil
             false;
         };
     }
-    public static function readArgument(p: IExpansionProcessor): Null<Array<Token>>
+    public static function readArgument(p: IExpansionProcessor, name: TokenValue, isLong: Bool): Null<Array<Token>>
     {
         var t = p.nextNonspaceToken();
         if (t == null) {
@@ -96,15 +97,19 @@ class ExpansionProcessorUtil
                     } else {
                         --count;
                     }
+                case ControlSequence("par") if (!isLong):
+                    throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
                 default:
                 }
                 a.push(u.token);
             }
+        case ControlSequence("par") if (!isLong):
+            throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
         case _:
             return [t.token];
         }
     }
-    public static function readOptionalArgument(p: IExpansionProcessor, defaultValue: Array<Token> = null): Array<Token>
+    public static function readOptionalArgument(p: IExpansionProcessor, name: TokenValue, isLong: Bool, defaultValue: Array<Token> = null): Array<Token>
     {
         var t = p.nextNonspaceToken();
         if (t == null) {
@@ -130,27 +135,31 @@ class ExpansionProcessorUtil
                     if (count == 0) {
                         return a;
                     }
+                case ControlSequence("par") if (!isLong):
+                    throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
                 default:
                 }
                 a.push(t.token);
             }
+        case ControlSequence("par") if (!isLong):
+            throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
         default:
             p.unreadExpansionToken(t);
             return defaultValue;
         }
     }
-    public static function expandArgument(p: IExpansionProcessor): Null<Array<Token>>
+    public static function expandArgument(p: IExpansionProcessor, name: TokenValue, isLong: Bool): Null<Array<Token>>
     {
-        var a = p.readArgument();
+        var a = p.readArgument(name, isLong);
         return if (a != null) {
             p.expandCompletely(a);
         } else {
             null;
         };
     }
-    public static function expandOptionalArgument(p: IExpansionProcessor, defaultValue: Array<Token> = null): Null<Array<Token>>
+    public static function expandOptionalArgument(p: IExpansionProcessor, name: TokenValue, isLong: Bool, defaultValue: Array<Token> = null): Null<Array<Token>>
     {
-        var a = p.readOptionalArgument(defaultValue);
+        var a = p.readOptionalArgument(name, isLong, defaultValue);
         return if (a != null) {
             p.expandCompletely(a);
         } else {

@@ -54,24 +54,6 @@ class Token
 }
 class TokenUtil
 {
-    public static function containsParagraphSeparator(a: Array<Token>): Bool
-    {
-        for (t in a) {
-            switch (t.value) {
-            case ControlSequence("par"):
-                return true;
-            default:
-            }
-        }
-        return false;
-    }
-    public static function checkNoPar(a: Null<Array<Token>>, name: String)
-    {
-        if (a != null && containsParagraphSeparator(a)) {
-            throw new LaTeXError("Paragraph ended before " + name + " was complete");
-        }
-        return a;
-    }
     public static function digitValue(c: String): Null<Int>
     {
         return switch (c) {

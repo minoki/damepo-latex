@@ -8,32 +8,36 @@ import minilatex.Scope;
 using Command.ScopeExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
 using Util.NullExtender;
+using Token.TokenValueExtender;
 using Token.TokenUtil;
 class NewenvironmentCommand implements ExecutableCommand
 {
     var rxEnvironmentName: EReg;
-    var name: String;
-    public function new(name: String = "\\newenvironment")
+    var name: TokenValue;
+    public function new(name = "newenvironment")
     {
         this.rxEnvironmentName = ~/^(?!end)[a-zA-Z0-9*]+$/;
-        this.name = name;
+        this.name = ControlSequence(name);
     }
     public function doCommand(processor: ExecutionProcessor)
     {
         var expansionProcessor = processor.expansionProcessor;
         var isLong = !expansionProcessor.hasStar();
-        var name = expansionProcessor.expandArgument()
+        var name = expansionProcessor.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading the name of environment"));
-        if (!this.rxEnvironmentName.match(name)) {
-            throw new LaTeXError(this.name + ": invalid environment name");
+        if (~/^end/.match(name)) {
+            throw new LaTeXError("environment name must not start with 'end'");
         }
-        var args = processor.expansionProcessor.expandOptionalArgument();
+        if (!this.rxEnvironmentName.match(name)) {
+            throw new LaTeXError(this.name.toString() + ": invalid environment name");
+        }
+        var args = processor.expansionProcessor.expandOptionalArgument(this.name, false);
         var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args)
-            .throwIfNull(new LaTeXError(this.name + ": invalid number of arguments"));
-        var opt = processor.expansionProcessor.readOptionalArgument();
-        var beginDef = processor.expansionProcessor.readArgument();
-        var endDef = processor.expansionProcessor.readArgument();
+            .throwIfNull(new LaTeXError(this.name.toString() + ": invalid number of arguments"));
+        var opt = processor.expansionProcessor.readOptionalArgument(this.name, true);
+        var beginDef = processor.expansionProcessor.readArgument(this.name, true);
+        var endDef = processor.expansionProcessor.readArgument(this.name, true);
         var scope = processor.expansionProcessor.currentScope;
         if (this.shouldDefineEnvironment(scope, name)) {
             var beginCmdName = ControlSequence(name);
@@ -61,7 +65,7 @@ class RenewenvironmentCommand extends NewenvironmentCommand
 {
     public function new()
     {
-        super("\\renewenvironment");
+        super("renewenvironment");
     }
     public override function shouldDefineEnvironment(scope: Scope, name: String)
     {
@@ -79,8 +83,7 @@ class BeginEnvironmentCommand implements ExpandableCommand
     }
     public function doExpand(processor: IExpansionProcessor)
     {
-        var name = processor.expandArgument()
-            .checkNoPar("\\begin")
+        var name = processor.expandArgument(ControlSequence("begin"), false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("\\begin{}: invalid environment name"));
         if (!processor.getCurrentScope().isEnvironmentDefined(name)) {
@@ -99,8 +102,7 @@ class EndEnvironmentCommand implements ExpandableCommand
     }
     public function doExpand(processor: IExpansionProcessor)
     {
-        var name = processor.expandArgument()
-            .checkNoPar("\\end")
+        var name = processor.expandArgument(ControlSequence("end"), false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("\\end{}: invalid environment name"));
         if (!processor.getCurrentScope().isEnvironmentDefined(name)) {
