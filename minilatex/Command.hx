@@ -5,6 +5,7 @@ import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
 import minilatex.Environment;
+import minilatex.TeXPrimitive;
 import minilatex.Util;
 using Token.TokenValueExtender;
 using Token.TokenUtil;
@@ -16,10 +17,6 @@ class ScopeExtender
     public static function defineUnsupportedCommand(scope: Scope, name: String)
     {
         scope.defineExecutableCommand(ControlSequence(name), new UnsupportedCommand(name));
-    }
-    public static function defineUnsupportedTeXPrimitive(scope: Scope, name: String)
-    {
-        scope.defineExecutableCommand(ControlSequence(name), new UnsupportedTeXPrimitive(name));
     }
 }
 class UserCommand implements ExpandableCommand
@@ -225,27 +222,11 @@ class UnsupportedCommand implements ExecutableCommand
         throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }
 }
-class UnsupportedTeXPrimitive implements ExecutableCommand
-{
-    var name: String;
-    public function new(name: String)
-    {
-        this.name = name;
-    }
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
-    {
-        throw new LaTeXError("TeX primitive '\\" + this.name + "' is not supported");
-    }
-}
 class DefaultScope
 {
     public static function defineStandardCommands(scope: Scope)
     {
-        scope.defineUnsupportedTeXPrimitive("def");
-        scope.defineUnsupportedTeXPrimitive("edef");
-        scope.defineUnsupportedTeXPrimitive("xdef");
-        scope.defineUnsupportedTeXPrimitive("gdef");
-        scope.defineUnsupportedTeXPrimitive("catcode");
+        TeXPrimitive.defineTeXPrimitives(scope);
         scope.defineExecutableCommand(ControlSequence("newcommand"), new NewcommandCommand());
         scope.defineExecutableCommand(ControlSequence("renewcommand"), new RenewcommandCommand());
         scope.defineExecutableCommand(ControlSequence("providecommand"), new ProvidecommandCommand());
