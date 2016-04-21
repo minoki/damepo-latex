@@ -59,13 +59,13 @@ class UserCommand implements ExpandableCommand
         while (it.hasNext()) {
             var t = it.next();
             switch (t.value) {
-            case Character('#'):
+            case Parameter(_):
                 var u = it.next();
                 if (u == null) {
                     throw new LaTeXError("user-defined command: invalid use of parameter character");
                 }
                 switch (u.value) {
-                case Character('#'):
+                case Parameter(_):
                     result.push(u);
                 case Character(c):
                     var index = TokenUtil.digitValue(c);

@@ -12,6 +12,7 @@ enum ExecutionResult
     Subscript;
     Superscript;
     MathShift;
+    Space;
     VerbCommand(content: String, star: Bool);
 }
 class ExecutionProcessor
@@ -46,6 +47,8 @@ class ExecutionProcessor
                 result[0].push(Subscript);
             case Superscript:
                 result[0].push(Superscript);
+            case Space:
+                result[0].push(Space);
             case BeginGroup:
                 this.expansionProcessor.enterScope();
                 result.unshift([]);

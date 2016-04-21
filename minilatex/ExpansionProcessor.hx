@@ -18,6 +18,7 @@ enum ExpansionResult
     Subscript;
     Superscript;
     MathShift;
+    Space;
 }
 class ExpansionToken
 {
@@ -50,10 +51,7 @@ class ExpansionProcessorUtil
             var t = p.nextToken();
             if (t != null) {
                 switch (t.token.value) {
-                case Character(c):
-                    if (c != " " && c != "\t" && c != "\n") {
-                        return t;
-                    }
+                case Space(c):
                     continue;
                 default:
                     return t;
@@ -80,7 +78,7 @@ class ExpansionProcessorUtil
             return null;
         }
         switch (t.token.value) {
-        case Character('{'):
+        case BeginGroup(_):
             var a: Array<Token> = [];
             var count = 0;
             while (true) {
@@ -89,9 +87,9 @@ class ExpansionProcessorUtil
                     throw new LaTeXError("mismatched braces");
                 }
                 switch (u.token.value) {
-                case Character('{'):
+                case BeginGroup(_):
                     ++count;
-                case Character('}'):
+                case EndGroup(_):
                     if (count == 0) {
                         return a;
                     } else {
@@ -125,9 +123,9 @@ class ExpansionProcessorUtil
                     throw new LaTeXError("mismatched brackets");
                 }
                 switch (t.token.value) {
-                case Character('{'):
+                case BeginGroup(_):
                     ++count;
-                case Character('}'):
+                case EndGroup(_):
                     if (count > 0) {
                         --count;
                     }
@@ -207,9 +205,9 @@ class LocalExpansionProcessor implements IExpansionProcessor
                 return null;
             }
             switch (t.token.value) {
-            case Character('#'):
+            case Parameter(_):
                 throw new LaTeXError("unexpected parameter char '#'");
-            case Character('~') | ControlSequence(_):
+            case Active(_) | ControlSequence(_):
                 switch (this.scope.lookupCommand(t.token.value)) {
                 case null:
                     return t.token;
@@ -294,12 +292,12 @@ class ExpansionProcessor implements IExpansionProcessor
                 return null;
             }
             switch (t.token.value) {
-            case Character('#'):
+            case Parameter(_):
                 throw new LaTeXError("unexpected parameter char '#'");
-            case Character('$'):
+            case MathShift(_):
                 var u = this.nextToken();
                 var doubleDollar = u != null && switch (u.token.value) {
-                case Character('$'):
+                case MathShift(_):
                     true;
                 default:
                     this.unreadExpansionToken(u);
@@ -309,17 +307,17 @@ class ExpansionProcessor implements IExpansionProcessor
                     throw new LaTeXError("display math with `$$' is not supported");
                 }
                 return MathShift;
-            case Character('&'):
+            case AlignmentTab(_):
                 return AlignmentTab;
-            case Character('_'):
+            case Subscript(_):
                 return Subscript;
-            case Character('^'):
+            case Superscript(_):
                 return Superscript;
-            case Character('{'):
+            case BeginGroup(_):
                 return BeginGroup;
-            case Character('}'):
+            case EndGroup(_):
                 return EndGroup;
-            case Character('~') | ControlSequence(_):
+            case Active(_) | ControlSequence(_):
                 switch (this.currentScope.lookupCommand(t.token.value)) {
                 case null:
                     return UnknownCommand(t.token);
@@ -333,6 +331,8 @@ class ExpansionProcessor implements IExpansionProcessor
                 case ExecutableCommand(command):
                     return ExecutableCommand(t.token, command);
                 }
+            case Space(c):
+                return Space;
             case Character(c):
                 return Character(c);
             }

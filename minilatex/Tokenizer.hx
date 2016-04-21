@@ -115,7 +115,7 @@ class Tokenizer
 
                 } else if (rxToken.matched(4) != null) { /* space */
                     this.state = State.SkipSpaces;
-                    return new Token(Character(' '), currentLocation);
+                    return new Token(Space(' '), currentLocation);
 
                 } else if (rxToken.matched(5) != null) { /* newline */
                     var currentLocation = this.getCurrentLocation();
@@ -129,13 +129,23 @@ class Tokenizer
                         continue;
                     default:
                         this.state = State.NewLine;
-                        return new Token(Character(' '), currentLocation);
+                        return new Token(Space(' '), currentLocation);
                     }
 
                 } else if (rxToken.matched(6) != null) { /* other */
                     var c = rxToken.matched(6);
                     this.state = State.MiddleOfLine;
-                    return new Token(Character(c), currentLocation);
+                    return new Token(switch (c) {
+                        case '{': BeginGroup(c);
+                        case '}': EndGroup(c);
+                        case '&': AlignmentTab(c);
+                        case '_': Subscript(c);
+                        case '^': Superscript(c);
+                        case '$': MathShift(c);
+                        case '~': Active(c);
+                        case '#': Parameter(c);
+                        default: Character(c);
+                        }, currentLocation);
 
                 } else {
                     throw new TokenError("internal error", currentLocation);

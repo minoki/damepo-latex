@@ -42,6 +42,12 @@ class TestPage
                 codeElement.appendChild(textNode);
                 outputElement.appendChild(Browser.document.createTextNode(star ? "\\verb*" : "\\verb"));
                 outputElement.appendChild(codeElement);
+            case Space:
+                var textNode = Browser.document.createTextNode("\u00A0");
+                var spanElement = Browser.document.createElement("span");
+                spanElement.appendChild(textNode);
+                spanElement.className = "space";
+                outputElement.appendChild(spanElement);
             }
         }
     }

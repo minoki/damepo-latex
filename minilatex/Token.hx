@@ -4,6 +4,15 @@ enum TokenValue
 {
     Character(c: String);
     ControlSequence(name: String);
+    Space(c: String);
+    BeginGroup(c: String);
+    EndGroup(c: String);
+    AlignmentTab(c: String);
+    Subscript(c: String);
+    Superscript(c: String);
+    MathShift(c: String);
+    Active(c: String);
+    Parameter(c: String);
 }
 class TokenValueExtender
 {
@@ -12,6 +21,15 @@ class TokenValueExtender
         return switch (value) {
         case Character(c): c;
         case ControlSequence(name): "\\" + name;
+        case Space(c): c;
+        case BeginGroup(c): c;
+        case EndGroup(c): c;
+        case AlignmentTab(c): c;
+        case Subscript(c): c;
+        case Superscript(c): c;
+        case MathShift(c): c;
+        case Active(c): c;
+        case Parameter(c): c;
         };
     }
 }

@@ -27,6 +27,7 @@ class ExpansionResultExtension
         case Subscript: "_";
         case Superscript: "^";
         case MathShift: "$";
+        case Space: " ";
         }
     }
 }
@@ -110,7 +111,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
         assertETEquals(expansionProcessor.expand(), Character("l"));
         assertETEquals(expansionProcessor.expand(), Character("d"));
         assertETEquals(expansionProcessor.expand(), Character("!"));
-        assertETEquals(expansionProcessor.expand(), Character(" "));
+        assertETEquals(expansionProcessor.expand(), Space);
         assertETEquals(expansionProcessor.expand(), Character("G"));
         assertETEquals(expansionProcessor.expand(), Character("o"));
         assertETEquals(expansionProcessor.expand(), Character("o"));
@@ -129,10 +130,10 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Character(" "));
+        assertExecEquals(it.next(), Space);
         assertExecEquals(it.next(), Character("y"));
         assertExecEquals(it.next(), Character("x"));
-        assertExecEquals(it.next(), Character(" "));
+        assertExecEquals(it.next(), Space);
         assertExecEquals(it.next(), UnknownCommand(new Token(ControlSequence("par"), null)));
         assertExecEquals(it.next(), Character("c"));
         assertExecEquals(it.next(), Character("b"));
@@ -147,7 +148,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var result = executionProcessor.processAll();
         var it = result.iterator();
         assertExecEquals(it.next(), Character("x"));
-        assertExecEquals(it.next(), Group([Character(" "), Character("y")]));
+        assertExecEquals(it.next(), Group([Space, Character("y")]));
         assertExecEquals(it.next(), Character("z"));
         assertExecEquals(it.next(), Character("x"));
         assertFalse(it.hasNext());
