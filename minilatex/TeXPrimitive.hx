@@ -10,7 +10,7 @@ class RelaxCommand implements ExecutableCommand
     public function new()
     {
     }
-    public function doCommand(processor: ExecutionProcessor)
+    public function execute(processor: ExecutionProcessor)
     {
         return [];
     }
@@ -22,7 +22,7 @@ class UnsupportedTeXPrimitive implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         throw new LaTeXError("TeX primitive '" + this.name.toString() + "' is not supported");
     }

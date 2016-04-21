@@ -215,7 +215,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
                     if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
-                    var expanded = command.doExpand(this);
+                    var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     /* continue */
                 case ExecutableCommand(command):
@@ -325,7 +325,7 @@ class ExpansionProcessor implements IExpansionProcessor
                     if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
-                    var expanded = command.doExpand(this);
+                    var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     // continue
                 case ExecutableCommand(command):

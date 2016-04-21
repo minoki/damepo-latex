@@ -64,7 +64,7 @@ class ExecutionProcessor
                 continue;
                 //throw new LaTeXError("command not found: " + name.toString());
             case ExecutableCommand(name, command):
-                result[0] = result[0].concat(command.doCommand(this));
+                result[0] = result[0].concat(command.execute(this));
             }
         }
     }

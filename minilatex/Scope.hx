@@ -11,11 +11,11 @@ enum Command
 }
 interface ExpandableCommand
 {
-    public function doExpand(processor: IExpansionProcessor): Array<Token>;
+    function expand(processor: IExpansionProcessor): Array<Token>;
 }
 interface ExecutableCommand
 {
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>;
+    function execute(processor: ExecutionProcessor): Array<ExecutionResult>;
 }
 class Scope
 {

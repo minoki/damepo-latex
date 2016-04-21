@@ -34,7 +34,7 @@ class UserCommand implements ExpandableCommand
         this.definitionBody = definitionBody;
         this.isLong = isLong;
     }
-    public function doExpand(processor: IExpansionProcessor)
+    public function expand(processor: IExpansionProcessor)
     {
         var remainingArguments = this.numberOfArguments;
         var arguments: Array<Array<Token>> = [];
@@ -90,7 +90,7 @@ class NewcommandCommand implements ExecutableCommand
     {
         this.name = ControlSequence(name);
     }
-    public function doCommand(processor: ExecutionProcessor)
+    public function execute(processor: ExecutionProcessor)
     {
         var isLong = !processor.expansionProcessor.hasStar();
         var cmd = processor.expansionProcessor.readArgument(this.name, false);
@@ -150,7 +150,7 @@ class MakeatCommand implements ExecutableCommand
     {
         this.atletter = atletter;
     }
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         processor.expansionProcessor.setAtLetter(this.atletter);
         return [];
@@ -172,7 +172,7 @@ class VerbCommand implements ExecutableCommand
             throw new LaTeXError("invalid token in \\verb");
         };
     }
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         var exp = processor.expansionProcessor;
         exp.tokenizer.enterVerbatimMode();
@@ -217,7 +217,7 @@ class UnsupportedCommand implements ExecutableCommand
     {
         this.name = name;
     }
-    public function doCommand(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
     {
         throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }

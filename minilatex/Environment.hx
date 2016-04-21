@@ -19,7 +19,7 @@ class NewenvironmentCommand implements ExecutableCommand
         this.rxEnvironmentName = ~/^(?!end)[a-zA-Z0-9*]+$/;
         this.name = ControlSequence(name);
     }
-    public function doCommand(processor: ExecutionProcessor)
+    public function execute(processor: ExecutionProcessor)
     {
         var expansionProcessor = processor.expansionProcessor;
         var isLong = !expansionProcessor.hasStar();
@@ -81,7 +81,7 @@ class BeginEnvironmentCommand implements ExpandableCommand
     public function new()
     {
     }
-    public function doExpand(processor: IExpansionProcessor)
+    public function expand(processor: IExpansionProcessor)
     {
         var name = processor.expandArgument(ControlSequence("begin"), false)
             .bindNull(TokenUtil.tokenListToName)
@@ -100,7 +100,7 @@ class EndEnvironmentCommand implements ExpandableCommand
     public function new()
     {
     }
-    public function doExpand(processor: IExpansionProcessor)
+    public function expand(processor: IExpansionProcessor)
     {
         var name = processor.expandArgument(ControlSequence("end"), false)
             .bindNull(TokenUtil.tokenListToName)
@@ -121,7 +121,7 @@ class InternalBeginEnvironmentCommand implements ExecutableCommand
     {
     }
     public static var commandName = ControlSequence("<begin environment>");
-    public function doCommand(processor: ExecutionProcessor)
+    public function execute(processor: ExecutionProcessor)
     {
         var name = switch (processor.expansionProcessor.nextToken().token.value) {
         case ControlSequence(name): name;
@@ -137,7 +137,7 @@ class InternalEndEnvironmentCommand implements ExecutableCommand
     {
     }
     public static var commandName = ControlSequence("<end environment>");
-    public function doCommand(processor: ExecutionProcessor)
+    public function execute(processor: ExecutionProcessor)
     {
         var name = switch (processor.expansionProcessor.nextToken().token.value) {
         case ControlSequence(name): name;
