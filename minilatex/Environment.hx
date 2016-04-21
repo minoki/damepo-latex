@@ -89,7 +89,7 @@ class BeginEnvironmentCommand implements ExpandableCommand
         if (!processor.getCurrentScope().isEnvironmentDefined(name)) {
             throw new LaTeXError("\\begin{}: environment '" + name + "' not found");
         }
-        return [new Token(ControlSequence("<begin environment>"), null),
+        return [new Token(InternalBeginEnvironmentCommand.commandName, null),
                 new Token(ControlSequence(name), null),
                 new Token(ControlSequence(name), null)
                 ];
@@ -109,7 +109,7 @@ class EndEnvironmentCommand implements ExpandableCommand
             throw new LaTeXError("\\end{}: environment '" + name + "' not found");
         }
         return [new Token(ControlSequence("end" + name), null),
-                new Token(ControlSequence("<end environment>"), null),
+                new Token(InternalEndEnvironmentCommand.commandName, null),
                 new Token(ControlSequence(name), null),
                 ];
     }
@@ -120,6 +120,7 @@ class InternalBeginEnvironmentCommand implements ExecutableCommand
     public function new()
     {
     }
+    public static var commandName = ControlSequence("<begin environment>");
     public function doCommand(processor: ExecutionProcessor)
     {
         var name = switch (processor.expansionProcessor.nextToken().token.value) {
@@ -135,6 +136,7 @@ class InternalEndEnvironmentCommand implements ExecutableCommand
     public function new()
     {
     }
+    public static var commandName = ControlSequence("<end environment>");
     public function doCommand(processor: ExecutionProcessor)
     {
         var name = switch (processor.expansionProcessor.nextToken().token.value) {

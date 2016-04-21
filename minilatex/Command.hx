@@ -256,8 +256,8 @@ class DefaultScope
         scope.defineExecutableCommand(ControlSequence("renewenvironment"), new RenewenvironmentCommand());
         scope.defineExpandableCommand(ControlSequence("begin"), new BeginEnvironmentCommand());
         scope.defineExpandableCommand(ControlSequence("end"), new EndEnvironmentCommand());
-        scope.defineExecutableCommand(ControlSequence("<begin environment>"), new InternalBeginEnvironmentCommand());
-        scope.defineExecutableCommand(ControlSequence("<end environment>"), new InternalEndEnvironmentCommand());
+        scope.defineExecutableCommand(InternalBeginEnvironmentCommand.commandName, new InternalBeginEnvironmentCommand());
+        scope.defineExecutableCommand(InternalEndEnvironmentCommand.commandName, new InternalEndEnvironmentCommand());
     }
     public static function getDefaultScope(): Scope
     {
