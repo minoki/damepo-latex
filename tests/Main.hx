@@ -10,7 +10,7 @@ using Main.ExpansionResultExtension;
 
 class ExpansionResultExtension
 {
-    public static function toString(e: Null<ExpansionResult>)
+    public static function toString<E>(e: Null<ExpansionResult<E>>)
     {
         return switch (e) {
         case null:
@@ -38,7 +38,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     {
         assertTrue(Type.enumEq(expected, actual), c);
     }
-    static function expansionResultEquals(x: Null<ExpansionResult>, y: Null<ExpansionResult>): Bool
+    static function expansionResultEquals<E>(x: Null<ExpansionResult<E>>, y: Null<ExpansionResult<E>>): Bool
     {
         if (x == null || y == null) {
             return x == null && y == null;
@@ -57,7 +57,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
         default: Type.enumEq(x, y);
         };
     }
-    function assertETEquals(expected: Null<ExpansionResult>, actual: Null<ExpansionResult>, ?c: haxe.PosInfos)
+    function assertETEquals<E>(expected: Null<ExpansionResult<E>>, actual: Null<ExpansionResult<E>>, ?c: haxe.PosInfos)
     {
         if (!expansionResultEquals(expected, actual)) {
             assertEquals(expected.toString(), actual.toString(), c);
@@ -126,7 +126,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testSimpleMacro()
     {
         var tokenizer = new Tokenizer("\\newcommand{\\foo}[2]{#2#1}\n\\foo{x}{y}\n \n  \\foo{\\foo{a}{b}}{c}");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<ExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -143,7 +143,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testOptionalArgument()
     {
         var tokenizer = new Tokenizer("\\newcommand\\hoge[1][x]{#1}%\n\\hoge { y}%\n\\hoge [z]%\n\\hoge\n");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<ExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -156,7 +156,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testCompleteExpansion()
     {
         var tokenizer = new Tokenizer("\\newcommand\\two{2}\\newcommand\\Two{\\two}\\newcommand{\\foo}[\\Two]{#2#1}\\foo{x}{y}");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<ExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -167,7 +167,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testEnvironment()
     {
         var tokenizer = new Tokenizer("\\newenvironment{foo}{x}{y}\\begin{foo}123\\end{foo}");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<ExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();

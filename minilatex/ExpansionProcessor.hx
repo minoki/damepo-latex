@@ -7,11 +7,11 @@ import minilatex.Util;
 using Token.TokenValueExtender;
 using Util.ArrayExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
-enum ExpansionResult
+enum ExpansionResult<E>
 {
     Character(c: String);
     UnknownCommand(name: Token);
-    ExecutableCommand(name: Token, command: ExecutableCommand);
+    ExecutableCommand(name: Token, command: ExecutableCommand<E>);
     BeginGroup;
     EndGroup;
     AlignmentTab;
@@ -32,7 +32,8 @@ class ExpansionToken
 }
 interface IExpansionProcessor
 {
-    function getCurrentScope(): Scope;
+    function getCurrentScope(): IScope;
+    function hasPendingToken(): Bool;
     function nextToken(): Null<ExpansionToken>;
     function unreadExpansionToken(t: ExpansionToken): Void;
     function expandCompletely(tokens: Array<Token>): Array<Token>;
@@ -168,10 +169,10 @@ class ExpansionProcessorUtil
 class LocalExpansionProcessor implements IExpansionProcessor
 {
     var tokens: Array<ExpansionToken>;
-    var scope: Scope;
+    var scope: IScope;
     var recursionLimit: Int;
     var pendingTokenLimit: Int;
-    public function new(tokens: Array<Token>, scope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokens: Array<Token>, scope: IScope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
         this.scope = scope;
@@ -181,6 +182,10 @@ class LocalExpansionProcessor implements IExpansionProcessor
     public function getCurrentScope()
     {
         return this.scope;
+    }
+    public function hasPendingToken()
+    {
+        return this.tokens.length > 0;
     }
     public function nextToken(): Null<ExpansionToken>
     {
@@ -208,7 +213,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
             case Parameter(_):
                 throw new LaTeXError("unexpected parameter char '#'");
             case Active(_) | ControlSequence(_):
-                switch (this.scope.lookupCommand(t.token.value)) {
+                switch (this.scope.lookupExpandableCommand(t.token.value)) {
                 case null:
                     return t.token;
                 case ExpandableCommand(command):
@@ -218,7 +223,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
                     var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     /* continue */
-                case ExecutableCommand(command):
+                case ExecutableCommand:
                     throw new LaTeXError("you cannot execute a command here");
                 }
             default:
@@ -241,14 +246,14 @@ class LocalExpansionProcessor implements IExpansionProcessor
         return localProcessor.expandAll();
     }
 }
-class ExpansionProcessor implements IExpansionProcessor
+class ExpansionProcessor<E> implements IExpansionProcessor
 {
     public var tokenizer: Tokenizer;
-    public var currentScope: Scope;
+    public var currentScope: Scope<E>;
     var pendingTokens: Array<ExpansionToken>;
     public var recursionLimit: Int;
     public var pendingTokenLimit: Int;
-    public function new(tokenizer: Tokenizer, initialScope: Scope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokenizer: Tokenizer, initialScope: Scope<E>, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokenizer = tokenizer;
         this.currentScope = initialScope;
@@ -284,7 +289,7 @@ class ExpansionProcessor implements IExpansionProcessor
             }
         }
     }
-    public function expand(): Null<ExpansionResult>
+    public function expand(): Null<ExpansionResult<E>>
     {
         while (true) {
             var t = this.nextToken();
@@ -338,17 +343,13 @@ class ExpansionProcessor implements IExpansionProcessor
             }
         }
     }
-    public function setAtLetter(value: Bool)
-    {
-        this.currentScope.setAtLetter(value);
-    }
     public function enterScope()
     {
         this.currentScope = new Scope(this.currentScope);
     }
     public function leaveScope()
     {
-        this.currentScope = this.currentScope.parent;
+        this.currentScope = this.currentScope.getParent();
     }
     public function expandCompletely(tokens: Array<Token>): Array<Token>
     {

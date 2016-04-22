@@ -10,7 +10,7 @@ using ExpansionProcessor.ExpansionProcessorUtil;
 using Util.NullExtender;
 using Token.TokenValueExtender;
 using Token.TokenUtil;
-class NewenvironmentCommand implements ExecutableCommand
+class NewenvironmentCommand implements ExecutableCommand<IExecutionProcessor>
 {
     var rxEnvironmentName: EReg;
     var name: TokenValue;
@@ -19,9 +19,9 @@ class NewenvironmentCommand implements ExecutableCommand
         this.rxEnvironmentName = ~/^(?!end)[a-zA-Z0-9*]+$/;
         this.name = ControlSequence(name);
     }
-    public function execute(processor: ExecutionProcessor)
+    public function execute(processor: IExecutionProcessor)
     {
-        var expansionProcessor = processor.expansionProcessor;
+        var expansionProcessor = processor.getExpansionProcessor();
         var isLong = !expansionProcessor.hasStar();
         var name = expansionProcessor.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
@@ -32,13 +32,13 @@ class NewenvironmentCommand implements ExecutableCommand
         if (!this.rxEnvironmentName.match(name)) {
             throw new LaTeXError(this.name.toString() + ": invalid environment name");
         }
-        var args = processor.expansionProcessor.expandOptionalArgument(this.name, false);
+        var args = expansionProcessor.expandOptionalArgument(this.name, false);
         var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args)
             .throwIfNull(new LaTeXError(this.name.toString() + ": invalid number of arguments"));
-        var opt = processor.expansionProcessor.readOptionalArgument(this.name, true);
-        var beginDef = processor.expansionProcessor.readArgument(this.name, true);
-        var endDef = processor.expansionProcessor.readArgument(this.name, true);
-        var scope = processor.expansionProcessor.currentScope;
+        var opt = expansionProcessor.readOptionalArgument(this.name, true);
+        var beginDef = expansionProcessor.readArgument(this.name, true);
+        var endDef = expansionProcessor.readArgument(this.name, true);
+        var scope = expansionProcessor.getCurrentScope();
         if (this.shouldDefineEnvironment(scope, name)) {
             var beginCmdName = ControlSequence(name);
             var endCmdName = ControlSequence("end" + name);
@@ -48,9 +48,8 @@ class NewenvironmentCommand implements ExecutableCommand
             scope.defineExpandableCommand(endCmdName, endCmd);
             scope.defineEnvironment(name);
         }
-        return [];
     }
-    public function shouldDefineEnvironment(scope: Scope, name: String)
+    public function shouldDefineEnvironment(scope: IScope, name: String)
     {
         if (scope.isEnvironmentDefined(name)) {
             throw new LaTeXError("\\newenvironment: environment '" + name + "' is already defined");
@@ -67,7 +66,7 @@ class RenewenvironmentCommand extends NewenvironmentCommand
     {
         super("renewenvironment");
     }
-    public override function shouldDefineEnvironment(scope: Scope, name: String)
+    public override function shouldDefineEnvironment(scope: IScope, name: String)
     {
         if (!scope.isEnvironmentDefined(name)) {
             throw new LaTeXError("\\renewenvironment: environment '" + name + "' is not defined");
@@ -117,35 +116,33 @@ class EndEnvironmentCommand implements ExpandableCommand
     }
 }
 
-class InternalBeginEnvironmentCommand implements ExecutableCommand
+class InternalBeginEnvironmentCommand implements ExecutableCommand<IExecutionProcessor>
 {
     public function new()
     {
     }
     public static var commandName = ControlSequence("<begin environment>");
-    public function execute(processor: ExecutionProcessor)
+    public function execute(processor: IExecutionProcessor)
     {
-        var name = switch (processor.expansionProcessor.nextToken().token.value) {
+        var name = switch (processor.getExpansionProcessor().nextToken().token.value) {
         case ControlSequence(name): name;
         default: throw new LaTeXError("\\begin: internal error");
         };
         processor.beginEnvironment(name);
-        return [];
     }
 }
-class InternalEndEnvironmentCommand implements ExecutableCommand
+class InternalEndEnvironmentCommand implements ExecutableCommand<IExecutionProcessor>
 {
     public function new()
     {
     }
     public static var commandName = ControlSequence("<end environment>");
-    public function execute(processor: ExecutionProcessor)
+    public function execute(processor: IExecutionProcessor)
     {
-        var name = switch (processor.expansionProcessor.nextToken().token.value) {
+        var name = switch (processor.getExpansionProcessor().nextToken().token.value) {
         case ControlSequence(name): name;
         default: throw new LaTeXError("\\end: internal error");
         };
         processor.endEnvironment(name);
-        return [];
     }
 }

@@ -60,7 +60,7 @@ class Tokenizer
     {
         return new TokenLocation(this.filename, this.currentLine, this.currentColumn);
     }
-    public function readToken(scope: Scope): Null<Token>
+    public function readToken(scope: IScope): Null<Token>
     {
         var rxToken = scope.isAtLetter ? this.rxToken_atletter : this.rxToken_atother;
         while (this.position < this.input.length) {

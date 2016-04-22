@@ -15,11 +15,21 @@ enum ExecutionResult
     Space;
     VerbCommand(content: String, star: Bool);
 }
-class ExecutionProcessor
+interface IExecutionProcessor
 {
-    public var expansionProcessor: ExpansionProcessor;
+    function getTokenizer(): Tokenizer;
+    function setAtLetter(isLetter: Bool): Void;
+    function getExpansionProcessor(): IExpansionProcessor;
+    function beginEnvironment(name: String): Void;
+    function endEnvironment(name: String): Void;
+    function verbCommand(result: String, star: Bool): Void;
+}
+class ExecutionProcessor implements IExecutionProcessor
+{
+    public var expansionProcessor: ExpansionProcessor<ExecutionProcessor>;
     var environmentStack: Array<String>;
-    public function new(expansionProcessor: ExpansionProcessor)
+    var currentExecutionResult: Array<ExecutionResult>;
+    public function new(expansionProcessor: ExpansionProcessor<ExecutionProcessor>)
     {
         this.expansionProcessor = expansionProcessor;
         this.environmentStack = [];
@@ -64,9 +74,22 @@ class ExecutionProcessor
                 continue;
                 //throw new LaTeXError("command not found: " + name.toString());
             case ExecutableCommand(name, command):
-                result[0] = result[0].concat(command.execute(this));
+                this.currentExecutionResult = result[0];
+                command.execute(this);
             }
         }
+    }
+    public function getTokenizer(): Tokenizer
+    {
+        return this.expansionProcessor.tokenizer;
+    }
+    public function setAtLetter(value: Bool)
+    {
+        this.expansionProcessor.currentScope.setAtLetter(value);
+    }
+    public function getExpansionProcessor()
+    {
+        return this.expansionProcessor;
     }
     public function beginEnvironment(name: String)
     {
@@ -87,5 +110,9 @@ class ExecutionProcessor
             var name = this.environmentStack[this.environmentStack.length - 1];
             throw new LaTeXError("\\begin{" + name + "} is not ended");
         }
+    }
+    public function verbCommand(result: String, star: Bool)
+    {
+        this.currentExecutionResult.push(VerbCommand(result, star));
     }
 }

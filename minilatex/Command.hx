@@ -14,9 +14,9 @@ using ExpansionProcessor.ExpansionProcessorUtil;
 using Util.NullExtender;
 class ScopeExtender
 {
-    public static function defineUnsupportedCommand(scope: Scope, name: String)
+    public static function defineUnsupportedCommand(scope: TDefiningScope<IExecutionProcessor>, name: String)
     {
-        scope.defineExecutableCommand(ControlSequence(name), new UnsupportedCommand(name));
+        scope.defineExecutableCommandT(ControlSequence(name), new UnsupportedCommand(name));
     }
 }
 class UserCommand implements ExpandableCommand
@@ -83,30 +83,30 @@ class UserCommand implements ExpandableCommand
         return result;
     }
 }
-class NewcommandCommand implements ExecutableCommand
+class NewcommandCommand implements ExecutableCommand<IExecutionProcessor>
 {
     var name: TokenValue;
     public function new(name = "newcommand")
     {
         this.name = ControlSequence(name);
     }
-    public function execute(processor: ExecutionProcessor)
+    public function execute(processor: IExecutionProcessor)
     {
-        var isLong = !processor.expansionProcessor.hasStar();
-        var cmd = processor.expansionProcessor.readArgument(this.name, false);
+        var expansionProcessor = processor.getExpansionProcessor();
+        var isLong = !expansionProcessor.hasStar();
+        var cmd = expansionProcessor.readArgument(this.name, false);
         var name = switch (cmd) {
         case [x]: x.value;
         case _: throw new LaTeXError(this.name.toString() + ": invalid command name");
         };
-        var args = processor.expansionProcessor.expandOptionalArgument(this.name, false);
+        var args = expansionProcessor.expandOptionalArgument(this.name, false);
         var numberOfArguments = args == null ? 0 : TokenUtil.tokenListToInt(args).throwIfNull(new LaTeXError(this.name.toString() + ": invalid number of arguments"));
-        var opt = processor.expansionProcessor.readOptionalArgument(this.name, true);
-        var definitionBody = processor.expansionProcessor.readArgument(this.name, true);
+        var opt = expansionProcessor.readOptionalArgument(this.name, true);
+        var definitionBody = expansionProcessor.readArgument(this.name, true);
         var command = new UserCommand(name, numberOfArguments, opt, definitionBody, isLong);
-        this.doDefineCommand(processor.expansionProcessor.currentScope, name, command);
-        return [];
+        this.doDefineCommand(expansionProcessor.getCurrentScope(), name, command);
     }
-    public function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
+    public function doDefineCommand(scope: IScope, name: TokenValue, command: ExpandableCommand)
     {
         if (scope.isCommandDefined(name)) {
             throw new LaTeXError("\\newcommand: command " + name.toString() + " is already defined");
@@ -121,7 +121,7 @@ class RenewcommandCommand extends NewcommandCommand
     {
         super("renewcommand");
     }
-    public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
+    public override function doDefineCommand(scope: IScope, name: TokenValue, command: ExpandableCommand)
     {
         if (!scope.isCommandDefined(name)) {
             throw new LaTeXError("\\renewcommand: command " + name.toString() + " is not defined");
@@ -136,27 +136,26 @@ class ProvidecommandCommand extends NewcommandCommand
     {
         super("providecommand");
     }
-    public override function doDefineCommand(scope: Scope, name: TokenValue, command: ExpandableCommand)
+    public override function doDefineCommand(scope: IScope, name: TokenValue, command: ExpandableCommand)
     {
         if (!scope.isCommandDefined(name)) {
             scope.defineExpandableCommand(name, command);
         }
     }
 }
-class MakeatCommand implements ExecutableCommand
+class MakeatCommand implements ExecutableCommand<IExecutionProcessor>
 {
     var atletter: Bool;
     public function new(atletter: Bool)
     {
         this.atletter = atletter;
     }
-    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: IExecutionProcessor)
     {
-        processor.expansionProcessor.setAtLetter(this.atletter);
-        return [];
+        processor.setAtLetter(this.atletter);
     }
 }
-class VerbCommand implements ExecutableCommand
+class VerbCommand implements ExecutableCommand<IExecutionProcessor>
 {
     public function new()
     {
@@ -172,10 +171,11 @@ class VerbCommand implements ExecutableCommand
             throw new LaTeXError("invalid token in \\verb");
         };
     }
-    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: IExecutionProcessor)
     {
-        var exp = processor.expansionProcessor;
-        exp.tokenizer.enterVerbatimMode();
+        var tokenizer = processor.getTokenizer();
+        tokenizer.enterVerbatimMode();
+        var exp = processor.getExpansionProcessor();
         var isInsideMacro = exp.hasPendingToken();
         var delimiterToken = exp.nextToken();
         if (delimiterToken == null) {
@@ -201,8 +201,9 @@ class VerbCommand implements ExecutableCommand
             var t = exp.nextToken();
             var c = characterValue(t);
             if (c == delimiter) {
-                exp.tokenizer.leaveVerbatimMode();
-                return [VerbCommand(result.toString(), star)];
+                tokenizer.leaveVerbatimMode();
+                processor.verbCommand(result.toString(), star);
+                return;
             } else if (c == '\n') {
                 throw new LaTeXError(name + " cannot contain a newline");
             }
@@ -210,39 +211,39 @@ class VerbCommand implements ExecutableCommand
         }
     }
 }
-class UnsupportedCommand implements ExecutableCommand
+class UnsupportedCommand implements ExecutableCommand<IExecutionProcessor>
 {
     var name: String;
     public function new(name: String)
     {
         this.name = name;
     }
-    public function execute(processor: ExecutionProcessor): Array<ExecutionResult>
+    public function execute(processor: IExecutionProcessor)
     {
         throw new LaTeXError("command '\\" + this.name + "' is not supported");
     }
 }
 class DefaultScope
 {
-    public static function defineStandardCommands(scope: Scope)
+    public static function defineStandardCommands(scope: TDefiningScope<IExecutionProcessor>)
     {
         TeXPrimitive.defineTeXPrimitives(scope);
-        scope.defineExecutableCommand(ControlSequence("newcommand"), new NewcommandCommand());
-        scope.defineExecutableCommand(ControlSequence("renewcommand"), new RenewcommandCommand());
-        scope.defineExecutableCommand(ControlSequence("providecommand"), new ProvidecommandCommand());
-        scope.defineExecutableCommand(ControlSequence("makeatletter"), new MakeatCommand(true));
-        scope.defineExecutableCommand(ControlSequence("makeatother"), new MakeatCommand(false));
-        scope.defineExecutableCommand(ControlSequence("verb"), new VerbCommand());
-        scope.defineExecutableCommand(ControlSequence("newenvironment"), new NewenvironmentCommand());
-        scope.defineExecutableCommand(ControlSequence("renewenvironment"), new RenewenvironmentCommand());
+        scope.defineExecutableCommandT(ControlSequence("newcommand"), new NewcommandCommand());
+        scope.defineExecutableCommandT(ControlSequence("renewcommand"), new RenewcommandCommand());
+        scope.defineExecutableCommandT(ControlSequence("providecommand"), new ProvidecommandCommand());
+        scope.defineExecutableCommandT(ControlSequence("makeatletter"), new MakeatCommand(true));
+        scope.defineExecutableCommandT(ControlSequence("makeatother"), new MakeatCommand(false));
+        scope.defineExecutableCommandT(ControlSequence("verb"), new VerbCommand());
+        scope.defineExecutableCommandT(ControlSequence("newenvironment"), new NewenvironmentCommand());
+        scope.defineExecutableCommandT(ControlSequence("renewenvironment"), new RenewenvironmentCommand());
         scope.defineExpandableCommand(ControlSequence("begin"), new BeginEnvironmentCommand());
         scope.defineExpandableCommand(ControlSequence("end"), new EndEnvironmentCommand());
-        scope.defineExecutableCommand(InternalBeginEnvironmentCommand.commandName, new InternalBeginEnvironmentCommand());
-        scope.defineExecutableCommand(InternalEndEnvironmentCommand.commandName, new InternalEndEnvironmentCommand());
+        scope.defineExecutableCommandT(InternalBeginEnvironmentCommand.commandName, new InternalBeginEnvironmentCommand());
+        scope.defineExecutableCommandT(InternalEndEnvironmentCommand.commandName, new InternalEndEnvironmentCommand());
     }
-    public static function getDefaultScope(): Scope
+    public static function getDefaultScope<E: IExecutionProcessor>(): Scope<E>
     {
-        var scope = new Scope(null);
+        var scope = new Scope<E>(null);
         defineStandardCommands(scope);
         return scope;
     }

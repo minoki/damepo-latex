@@ -4,23 +4,70 @@ import minilatex.Tokenizer;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Error;
-enum Command
+enum Command<E> /* contravariant in E: Command<IExecutionProcessor> -> Command<ConcreteExecutionProcessor> */
 {
     ExpandableCommand(c: ExpandableCommand);
-    ExecutableCommand(c: ExecutableCommand);
+    ExecutableCommand(c: ExecutableCommand<E>);
 }
 interface ExpandableCommand
 {
     function expand(processor: IExpansionProcessor): Array<Token>;
 }
-interface ExecutableCommand
+interface ExecutableCommand<E> /* contravariant in E: ExecutableCommand<IExecutionProcessor> -> ExecutableCommand<ConcreteExecutionProcessor> */
 {
-    function execute(processor: ExecutionProcessor): Array<ExecutionResult>;
+    function execute(processor: E): Void;
 }
-class Scope
+typedef TExecutableCommand<E> = {
+    function execute(processor: E): Void;
+}
+class WrappedExecutableCommand<E> implements ExecutableCommand<E>
 {
-    public var parent: Scope;
-    var commands: Map<TokenValue, Command>;
+    var wrapped: TExecutableCommand<E>;
+    public function new(x: TExecutableCommand<E>)
+    {
+        this.wrapped = x;
+    }
+    public function execute(processor: E)
+    {
+        this.wrapped.execute(processor);
+    }
+}
+enum Command_Bottom /* Command<Bottom> */
+{
+    ExpandableCommand(c: ExpandableCommand);
+    ExecutableCommand;
+}
+interface IScope
+{
+    function getParent(): IScope;
+    var isAtLetter(default, null): Bool;
+    function isCommandDefined(name: TokenValue): Bool;
+    function lookupExpandableCommand(name: TokenValue): Command_Bottom;
+    function defineExpandableCommand(name: TokenValue, definition: ExpandableCommand): Void;
+    function isEnvironmentDefined(name: String): Bool;
+    function defineEnvironment(name: String): Void;
+    function setAtLetter(value: Bool): Void;
+}
+typedef TScope = {
+    function getParent(): IScope;
+    var isAtLetter(default, null): Bool;
+    function isCommandDefined(name: TokenValue): Bool;
+    function lookupExpandableCommand(name: TokenValue): Command_Bottom;
+    function defineExpandableCommand(name: TokenValue, definition: ExpandableCommand): Void;
+    function isEnvironmentDefined(name: String): Bool;
+    function defineEnvironment(name: String): Void;
+    function setAtLetter(value: Bool): Void;
+}
+/* covariant in E: TDefiningScope<ConcreteExecutionProcessor> -> TDefiningScope<IExecutionProcessor> */
+typedef TDefiningScope<E> = {
+    > TScope,
+    //function defineCommand(name: TokenValue, definition: Command<E>): Void;
+    function defineExecutableCommandT(name: TokenValue, definition: TExecutableCommand<E>): Void;
+}
+class Scope<E> implements IScope /* invariant in E */
+{
+    var parent: Scope<E>;
+    var commands: Map<TokenValue, Command<E>>;
     var environments: Array<String>;
     public var isAtLetter: Bool;
     public function new(parent)
@@ -29,6 +76,10 @@ class Scope
         this.commands = new Map();
         this.environments = [];
         this.isAtLetter = parent != null && parent.isAtLetter;
+    }
+    public function getParent()
+    {
+        return this.parent;
     }
     public function isCommandDefined(name: TokenValue): Bool
     {
@@ -41,7 +92,7 @@ class Scope
         }
         return false;
     }
-    public function lookupCommand(name: TokenValue): Command
+    public function lookupCommand(name: TokenValue): Command<E>
     {
         var scope = this;
         while (scope != null) {
@@ -52,7 +103,15 @@ class Scope
         }
         return null;
     }
-    public function defineCommand(name: TokenValue, definition: Command)
+    public function lookupExpandableCommand(name: TokenValue): Command_Bottom
+    {
+        return switch (this.lookupCommand(name)) {
+        case null: null;
+        case ExpandableCommand(command): ExpandableCommand(command);
+        case ExecutableCommand(command): ExecutableCommand;
+        };
+    }
+    public function defineCommand(name: TokenValue, definition: Command<E>)
     {
         this.commands.set(name, definition);
     }
@@ -60,9 +119,13 @@ class Scope
     {
         this.defineCommand(name, ExpandableCommand(definition));
     }
-    public function defineExecutableCommand(name: TokenValue, definition: ExecutableCommand)
+    public function defineExecutableCommand(name: TokenValue, definition: ExecutableCommand<E>)
     {
         this.defineCommand(name, ExecutableCommand(definition));
+    }
+    public function defineExecutableCommandT(name: TokenValue, definition: TExecutableCommand<E>)
+    {
+        this.defineExecutableCommand(name, new WrappedExecutableCommand(definition));
     }
     public function isEnvironmentDefined(name: String): Bool
     {
