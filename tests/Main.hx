@@ -171,11 +171,11 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Character("x"));
-        assertExecEquals(it.next(), Character("1"));
-        assertExecEquals(it.next(), Character("2"));
-        assertExecEquals(it.next(), Character("3"));
-        assertExecEquals(it.next(), Character("y"));
+        assertExecEquals(it.next(), Group([Character("x"),
+                                           Character("1"),
+                                           Character("2"),
+                                           Character("3"),
+                                           Character("y")]));
         assertFalse(it.hasNext());
     }
 }

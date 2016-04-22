@@ -89,7 +89,8 @@ class BeginEnvironmentCommand implements ExpandableCommand
         if (!processor.getCurrentScope().isEnvironmentDefined(name)) {
             throw new LaTeXError("\\begin{}: environment '" + name + "' not found");
         }
-        return [new Token(InternalBeginEnvironmentCommand.commandName, null),
+        return [new Token(BeginGroup('{'), null),
+                new Token(InternalBeginEnvironmentCommand.commandName, null),
                 new Token(ControlSequence(name), null),
                 new Token(ControlSequence(name), null)
                 ];
@@ -111,6 +112,7 @@ class EndEnvironmentCommand implements ExpandableCommand
         return [new Token(ControlSequence("end" + name), null),
                 new Token(InternalEndEnvironmentCommand.commandName, null),
                 new Token(ControlSequence(name), null),
+                new Token(EndGroup('}'), null)
                 ];
     }
 }
