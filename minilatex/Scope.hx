@@ -31,6 +31,14 @@ class WrappedExecutableCommand<E> implements ExecutableCommand<E>
     {
         this.wrapped.execute(processor);
     }
+    public static inline function wrap<E>(x: TExecutableCommand<E>): ExecutableCommand<E>
+    {
+        #if js
+            return cast x;
+        #else
+            return new WrappedExecutableCommand(x);
+        #end
+    }
 }
 enum Command_Bottom /* Command<Bottom> */
 {
@@ -125,7 +133,7 @@ class Scope<E> implements IScope /* invariant in E */
     }
     public function defineExecutableCommandT(name: TokenValue, definition: TExecutableCommand<E>)
     {
-        this.defineExecutableCommand(name, new WrappedExecutableCommand(definition));
+        this.defineExecutableCommand(name, WrappedExecutableCommand.wrap(definition));
     }
     public function isEnvironmentDefined(name: String): Bool
     {
