@@ -36,12 +36,6 @@ class TestPage
                 outputElement.appendChild(Browser.document.createTextNode("^"));
             case MathShift:
                 outputElement.appendChild(Browser.document.createTextNode("$"));
-            case VerbCommand(content, star):
-                var textNode = Browser.document.createTextNode(content);
-                var codeElement = Browser.document.createElement("code");
-                codeElement.appendChild(textNode);
-                outputElement.appendChild(Browser.document.createTextNode(star ? "\\verb*" : "\\verb"));
-                outputElement.appendChild(codeElement);
             case Space:
                 var textNode = Browser.document.createTextNode("\u00A0");
                 var spanElement = Browser.document.createElement("span");

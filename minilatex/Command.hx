@@ -155,7 +155,7 @@ class MakeatCommand implements ExecutableCommand<IExecutionProcessor>
         processor.setAtLetter(this.atletter);
     }
 }
-class VerbCommand implements ExecutableCommand<IExecutionProcessor>
+class VerbCommand implements ExecutableCommand<IVerbTextExecutionProcessor>
 {
     public function new()
     {
@@ -171,7 +171,7 @@ class VerbCommand implements ExecutableCommand<IExecutionProcessor>
             throw new LaTeXError("invalid token in \\verb");
         };
     }
-    public function execute(processor: IExecutionProcessor)
+    public function execute(processor: IVerbTextExecutionProcessor)
     {
         var tokenizer = processor.getTokenizer();
         tokenizer.enterVerbatimMode();
@@ -233,7 +233,6 @@ class DefaultScope
         scope.defineExecutableCommandT(ControlSequence("providecommand"), new ProvidecommandCommand());
         scope.defineExecutableCommandT(ControlSequence("makeatletter"), new MakeatCommand(true));
         scope.defineExecutableCommandT(ControlSequence("makeatother"), new MakeatCommand(false));
-        scope.defineExecutableCommandT(ControlSequence("verb"), new VerbCommand());
         scope.defineExecutableCommandT(ControlSequence("newenvironment"), new NewenvironmentCommand());
         scope.defineExecutableCommandT(ControlSequence("renewenvironment"), new RenewenvironmentCommand());
         scope.defineExpandableCommand(ControlSequence("begin"), new BeginEnvironmentCommand());
@@ -246,5 +245,9 @@ class DefaultScope
         var scope = new Scope<E>(null);
         defineStandardCommands(scope);
         return scope;
+    }
+    public static function defineVerbCommand(scope: TDefiningScope<IVerbTextExecutionProcessor>)
+    {
+        scope.defineExecutableCommandT(ControlSequence("verb"), new VerbCommand());
     }
 }

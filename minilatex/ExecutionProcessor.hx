@@ -13,7 +13,6 @@ enum ExecutionResult
     Superscript;
     MathShift;
     Space;
-    VerbCommand(content: String, star: Bool);
 }
 interface IExecutionProcessor
 {
@@ -22,13 +21,19 @@ interface IExecutionProcessor
     function getExpansionProcessor(): IExpansionProcessor;
     function beginEnvironment(name: String): Void;
     function endEnvironment(name: String): Void;
-    function verbCommand(result: String, star: Bool): Void;
+}
+interface ITypesetExecutionProcessor extends IExecutionProcessor
+{
+    function typesetChar(c: String): Void;
+}
+interface IVerbTextExecutionProcessor extends IExecutionProcessor
+{
+    function verbCommand(text: String, star: Bool): Void;
 }
 class ExecutionProcessor implements IExecutionProcessor
 {
     public var expansionProcessor: ExpansionProcessor<ExecutionProcessor>;
     var environmentStack: Array<String>;
-    var currentExecutionResult: Array<ExecutionResult>;
     public function new(expansionProcessor: ExpansionProcessor<ExecutionProcessor>)
     {
         this.expansionProcessor = expansionProcessor;
@@ -43,6 +48,7 @@ class ExecutionProcessor implements IExecutionProcessor
                 if (result.length != 1) {
                     throw new LaTeXError("Unexpected end of input");
                 } else {
+                    this.checkEnvironment();
                     return result[0];
                 }
             }
@@ -74,7 +80,6 @@ class ExecutionProcessor implements IExecutionProcessor
                 continue;
                 //throw new LaTeXError("command not found: " + name.toString());
             case ExecutableCommand(name, command):
-                this.currentExecutionResult = result[0];
                 command.execute(this);
             }
         }
@@ -110,9 +115,5 @@ class ExecutionProcessor implements IExecutionProcessor
             var name = this.environmentStack[this.environmentStack.length - 1];
             throw new LaTeXError("\\begin{" + name + "} is not ended");
         }
-    }
-    public function verbCommand(result: String, star: Bool)
-    {
-        this.currentExecutionResult.push(VerbCommand(result, star));
     }
 }
