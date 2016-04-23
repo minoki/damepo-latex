@@ -1,29 +1,21 @@
 all: test-neko test-js test-php
 
-lib_src = \
- ../minilatex/Token.hx \
- ../minilatex/Tokenizer.hx \
- ../minilatex/Scope.hx \
- ../minilatex/ExpansionProcessor.hx \
- ../minilatex/ExecutionProcessor.hx \
- ../minilatex/Command.hx \
- ../minilatex/Environment.hx \
- ../minilatex/Error.hx \
- ../minilatex/Util.hx
-
-test-neko: Main.hx $(lib_src)
+test-neko:
 	haxe -main Main -cp .. -x test
 
-test-js: Main.hx $(lib_src)
+test-js:
 	haxe -main Main -cp .. -js test.js -cmd "node test.js"
 
-test-php: Main.hx $(lib_src)
-	haxe -main Main -cp .. -php testphp -cmd "php testphp/index.php"
+test-php:
+	haxe -main Main -cp .. -php test-php -cmd "php test-php/index.php"
 
-test-cpp: Main.hx $(lib_src)
-	haxe -main Main -cp .. -cpp testcpp -cmd "testcpp/Main"
+test-cpp:
+	haxe -main Main -cp .. -cpp test-cpp -cmd "test-cpp/Main"
 
-.PHONY: all test-neko test-js test-php test-cpp
+test-java:
+	haxe -main Main -cp .. -java test-java -cmd "java -jar test-java/Main.jar"
+
+.PHONY: all test-neko test-js test-php test-cpp test-java
 
 RxPatternTest-neko:
 	haxe -main RxPatternTest -cp .. -x RxPatternTest
