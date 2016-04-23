@@ -30,6 +30,7 @@ class ExpansionToken
         this.depth = depth;
     }
 }
+#if js @:remove #end
 interface IExpansionProcessor
 {
     function getCurrentScope(): IScope;

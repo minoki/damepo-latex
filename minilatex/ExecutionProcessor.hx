@@ -14,6 +14,7 @@ enum ExecutionResult
     MathShift;
     Space;
 }
+#if js @:remove #end
 interface IExecutionProcessor
 {
     function getTokenizer(): Tokenizer;
@@ -22,10 +23,12 @@ interface IExecutionProcessor
     function beginEnvironment(name: String): Void;
     function endEnvironment(name: String): Void;
 }
+#if js @:remove #end
 interface ITypesetExecutionProcessor extends IExecutionProcessor
 {
     function typesetChar(c: String): Void;
 }
+#if js @:remove #end
 interface IVerbTextExecutionProcessor extends IExecutionProcessor
 {
     function verbCommand(text: String, star: Bool): Void;

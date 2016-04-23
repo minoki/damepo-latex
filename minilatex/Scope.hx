@@ -9,10 +9,12 @@ enum Command<E> /* contravariant in E: Command<IExecutionProcessor> -> Command<C
     ExpandableCommand(c: ExpandableCommand);
     ExecutableCommand(c: ExecutableCommand<E>);
 }
+#if js @:remove #end
 interface ExpandableCommand
 {
     function expand(processor: IExpansionProcessor): Array<Token>;
 }
+#if js @:remove #end
 interface ExecutableCommand<E> /* contravariant in E: ExecutableCommand<IExecutionProcessor> -> ExecutableCommand<ConcreteExecutionProcessor> */
 {
     function execute(processor: E): Void;
@@ -45,6 +47,7 @@ enum Command_Bottom /* Command<Bottom> */
     ExpandableCommand(c: ExpandableCommand);
     ExecutableCommand;
 }
+#if js @:remove #end
 interface IScope
 {
     function getParent(): IScope;
