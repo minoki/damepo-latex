@@ -9,22 +9,28 @@ leftpadWith0 :: Int -> String -> String
 leftpadWith0 n s | length s < n = leftpadWith0 n ('0':s)
                  | otherwise = s
 
-showUnicodeEsc :: Int -> String
-showUnicodeEsc c | chr c `elem` "-]\\" = ['\\', chr c]
-                 | c < 0x80 = [chr c]
-                -- | c < 0x10000 && not (0xD800 <= c && c <= 0xDFFF) = [chr c] -- "\\u" ++ leftpadWith0 4 (showHEX c "")
-                 | c < 0x10000 = "\\\\u" ++ leftpadWith0 4 (showHEX c "")
-                 | otherwise = "\\\\u{" ++ showHEX c "}"
-  where showHEX = (map toUpper .) . showHex
+data UnicodeEscStyle = ECMAScriptStyle | PCREStyle deriving Eq
 
-showUnicodeEscRange :: Int -> Int -> String
-showUnicodeEscRange x y | x == y = showUnicodeEsc x
-                        | otherwise = showUnicodeEsc x ++ "-" ++ showUnicodeEsc y
+showHEX = (map toUpper .) . showHex
 
-buildRangeRx :: [(Int,Int)] -> String
-buildRangeRx [] = ""
-buildRangeRx [(x,y)] | x == y = showUnicodeEsc x
-buildRangeRx xs = "[" ++ concatMap (uncurry showUnicodeEscRange) xs ++ "]"
+showUnicodeEsc :: UnicodeEscStyle -> Int -> String
+showUnicodeEsc ECMAScriptStyle c | chr c `elem` "-]\\" = ['\\', chr c]
+                                 | c < 0x80 = [chr c]
+                              -- | c < 0x10000 && not (0xD800 <= c && c <= 0xDFFF) = [chr c] -- "\\u" ++ leftpadWith0 4 (showHEX c "")
+                                 | c < 0x10000 = "\\\\u" ++ leftpadWith0 4 (showHEX c "")
+                                 | otherwise = "\\\\u{" ++ showHEX c "}"
+showUnicodeEsc PCREStyle c | chr c `elem` "-]\\" = ['\\', chr c]
+                           | c < 0x80 = [chr c]
+                           | otherwise = "\\\\x{" ++ showHEX c "}"
+
+showUnicodeEscRange :: UnicodeEscStyle -> Int -> Int -> String
+showUnicodeEscRange style x y | x == y = showUnicodeEsc style x
+                              | otherwise = showUnicodeEsc style x ++ "-" ++ showUnicodeEsc style y
+
+buildRangeRx :: UnicodeEscStyle -> [(Int,Int)] -> String
+buildRangeRx _ [] = ""
+buildRangeRx style [(x,y)] | x == y = showUnicodeEsc style x
+buildRangeRx style xs = "[" ++ concatMap (uncurry (showUnicodeEscRange style)) xs ++ "]"
 
 setToRanges :: (Enum a, Eq a) => [a] -> [(a,a)]
 setToRanges [] = []
@@ -100,19 +106,22 @@ compareBySnd (x,y) (x',y') = case compare y y' of
   c -> c
 
 main = do args <- getArgs
-          let catPrefix | (x:_) <- args = x
+          let (style,rest) | ("--pcre":rest) <- args = (PCREStyle,rest)
+                           | ("--es":rest) <- args = (ECMAScriptStyle,rest)
+                           | otherwise = (ECMAScriptStyle,args)
+              catPrefix | x:_ <- rest = x
                         | otherwise = "L" -- Letter
           l <- lines <$> readFile "UnicodeData.txt"
           let codepoints = parseUnicodeData l
               letters = map fst $ filter (isPrefixOf catPrefix . snd) codepoints
               (bmp,surrogates) = partitionEither $ map encodeUtf16 letters
-              bmprx = buildRangeRx $ setToRanges bmp
-          --putStrLn (buildRangeRx $ setToRanges letters)
-          --putStr (buildRangeRx $ setToRanges bmp)
+              bmprx = buildRangeRx style $ setToRanges bmp
           let surrogateGroups :: [(Int,[(Int,Int)])]
               surrogateGroups = map (second setToRanges) $ groupByFst surrogates
               surrogateGroups2 :: [([(Int,Int)],[(Int,Int)])]
               surrogateGroups2 = sortBy compareByFst $ map (first setToRanges) $ groupBySnd $ sortBy compareBySnd surrogateGroups
               surrogatesRx :: [String]
-              surrogatesRx = map (uncurry (++) . (buildRangeRx *** buildRangeRx)) surrogateGroups2
-          putStrLn (concat $ intersperse "|" $ bmprx:surrogatesRx)
+              surrogatesRx = map (uncurry (++) . (buildRangeRx ECMAScriptStyle *** buildRangeRx ECMAScriptStyle)) surrogateGroups2
+          if style == ECMAScriptStyle
+          then putStrLn (concat $ intersperse "|" $ bmprx:surrogatesRx)
+          else putStrLn (buildRangeRx style $ setToRanges letters)
