@@ -12,7 +12,12 @@ lib_src = \
  ../minilatex/TypesetCommand.hx \
  ../minilatex/SimpleHTMLProcessor.hx \
  ../minilatex/Error.hx \
- ../minilatex/Util.hx
+ ../minilatex/Util.hx \
+ ../minilatex/util/CharClass.hx \
+ ../minilatex/util/CharSet.hx \
+ ../minilatex/util/IntSet.hx \
+ ../minilatex/util/RxPattern.hx \
+ ../minilatex/util/UnicodeUtil.hx
 
 index.js: TestPage.hx $(lib_src)
 	haxe -main TestPage -js $@ -cp ..
