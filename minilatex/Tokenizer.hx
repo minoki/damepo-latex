@@ -2,6 +2,9 @@ package minilatex;
 import minilatex.Token;
 import minilatex.Scope;
 import minilatex.Error;
+import minilatex.util.CharSet;
+import minilatex.util.RxPattern;
+import minilatex.util.CharClass;
 private enum State {
     NewLine;
     SkipSpaces;
@@ -19,12 +22,12 @@ class Tokenizer
     var rxSpaces: EReg;
     var rxToken_atletter: EReg;
     var rxToken_atother: EReg;
-    private static inline function makeAnchoredRx(s: String): EReg
+    private static inline function makeAnchoredRx(s): EReg
     {
         #if php
-        return new EReg(s, "A");
+            return RxPattern.buildEReg(s, "uA");
         #else
-        return new EReg("^(?:" + s + ")", "");
+            return RxPattern.buildEReg(RxPattern.AssertFirst() + s, "u");
         #end
     }
     private static inline function matchAnchoredRx(r: EReg, s: String, pos: Int): Bool
@@ -52,9 +55,29 @@ class Tokenizer
         this.currentLine = 1;
         this.currentColumn = 0;
         this.state = State.NewLine;
-        this.rxSpaces = makeAnchoredRx("[ \t]+");
-        this.rxToken_atother = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z]+)|(.|\n|))|([ \t])|(\n)|([^%\\\\])");
-        this.rxToken_atletter = makeAnchoredRx("(%.*\n?)|\\\\(?:([a-zA-Z@]+)|(.|\n|))|([ \t])|(\n)|([^%\\\\])");
+        this.rxSpaces = makeAnchoredRx(RxPattern.CharSet(CharSet.fromStringLiteral(" \t")).some());
+        var commentChar = RxPattern.Char("%");
+        var escapeChar = RxPattern.Char("\\");
+        var space = RxPattern.CharSet(CharSet.fromStringLiteral(" \t"));
+        var newLine = RxPattern.NewLine();
+
+        var comment = commentChar + RxPattern.AnyExceptNewLine().any()
+              + newLine.option();
+        var letters = CharClass.Letter;
+        var letters_atLetter = letters | RxPattern.Char("@");
+        var controlSequence = escapeChar + (RxPattern.Group(letters.some()) | RxPattern.Group(RxPattern.AnyCodePoint() | RxPattern.Empty()));
+        var controlSequence_atLetter = escapeChar + (RxPattern.Group(letters.some()) | RxPattern.Group(RxPattern.AnyCodePoint() | RxPattern.Empty()));
+        var other = RxPattern.notInSet(CharSet.fromStringLiteral("%\\"));
+        this.rxToken_atother = makeAnchoredRx(RxPattern.Group(comment)
+                                              | controlSequence
+                                              | RxPattern.Group(space)
+                                              | RxPattern.Group(newLine)
+                                              | RxPattern.Group(other));
+        this.rxToken_atletter = makeAnchoredRx(RxPattern.Group(comment)
+                                               | controlSequence_atLetter
+                                               | RxPattern.Group(space)
+                                               | RxPattern.Group(newLine)
+                                               | RxPattern.Group(other));
     }
     function getCurrentLocation(): TokenLocation
     {

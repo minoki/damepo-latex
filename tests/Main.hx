@@ -123,6 +123,16 @@ class ExpansionTestCase extends haxe.unit.TestCase
         assertETEquals(expansionProcessor.expand(), Character("!"));
         assertETEquals(expansionProcessor.expand(), null);
     }
+    public function testUnicode()
+    {
+        var tokenizer = new Tokenizer("\\Hello\u{3042}\\\u{1F600}a\\\u{20BBf}a");
+        var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null));
+        assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("Hello\u{3042}"), null)));
+        assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("\u{1F600}"), null)));
+        assertETEquals(expansionProcessor.expand(), Character("a"));
+        assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("\u{20BBF}a"), null)));
+        assertETEquals(expansionProcessor.expand(), null);
+    }
     public function testSimpleMacro()
     {
         var tokenizer = new Tokenizer("\\newcommand{\\foo}[2]{#2#1}\n\\foo{x}{y}\n \n  \\foo{\\foo{a}{b}}{c}");
