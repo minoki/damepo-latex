@@ -4,6 +4,7 @@ import minilatex.Scope;
 import minilatex.Error;
 import minilatex.util.CharSet;
 import minilatex.util.RxPattern;
+import minilatex.util.RxPattern as P;
 import minilatex.util.CharClass;
 private enum State {
     NewLine;
@@ -55,29 +56,30 @@ class Tokenizer
         this.currentLine = 1;
         this.currentColumn = 0;
         this.state = State.NewLine;
-        this.rxSpaces = makeAnchoredRx(RxPattern.CharSet(CharSet.fromStringLiteral(" \t")).some());
-        var commentChar = RxPattern.Char("%");
-        var escapeChar = RxPattern.Char("\\");
-        var space = RxPattern.CharSet(CharSet.fromStringLiteral(" \t"));
-        var newLine = RxPattern.NewLine();
+        this.rxSpaces = makeAnchoredRx(P.CharSet(CharSet.fromStringLiteral(" \t")).some());
+        var commentChar = P.Char("%");
+        var escapeChar = P.Char("\\");
+        var space = P.CharSet(CharSet.fromStringLiteral(" \t"));
+        var newLine = P.NewLine();
 
-        var comment = commentChar + RxPattern.AnyExceptNewLine().any()
+        var comment = commentChar + P.AnyExceptNewLine().any()
               + newLine.option();
         var letters = CharClass.Letter;
-        var letters_atLetter = letters | RxPattern.Char("@");
-        var controlSequence = escapeChar + (RxPattern.Group(letters.some()) | RxPattern.Group(RxPattern.AnyCodePoint() | RxPattern.Empty()));
-        var controlSequence_atLetter = escapeChar + (RxPattern.Group(letters.some()) | RxPattern.Group(RxPattern.AnyCodePoint() | RxPattern.Empty()));
         var other = RxPattern.notInSet(CharSet.fromStringLiteral("%\\"));
-        this.rxToken_atother = makeAnchoredRx(RxPattern.Group(comment)
-                                              | controlSequence
-                                              | RxPattern.Group(space)
-                                              | RxPattern.Group(newLine)
-                                              | RxPattern.Group(other));
-        this.rxToken_atletter = makeAnchoredRx(RxPattern.Group(comment)
-                                               | controlSequence_atLetter
-                                               | RxPattern.Group(space)
-                                               | RxPattern.Group(newLine)
-                                               | RxPattern.Group(other));
+        this.rxToken_atother =
+            makeAnchoredRx(P.Group(comment)
+                           | (escapeChar + (P.Group(letters.some())
+                                            | P.Group(P.AnyCodePoint() | P.Empty())))
+                           | P.Group(space)
+                           | P.Group(newLine)
+                           | P.Group(other));
+        this.rxToken_atletter =
+            makeAnchoredRx(P.Group(comment)
+                           | (escapeChar + (P.Group((letters | P.Char("@")).some())
+                                            | P.Group(P.AnyCodePoint() | P.Empty())))
+                           | P.Group(space)
+                           | P.Group(newLine)
+                           | P.Group(other));
     }
     function getCurrentLocation(): TokenLocation
     {
