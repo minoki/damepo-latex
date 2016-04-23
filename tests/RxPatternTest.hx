@@ -24,6 +24,7 @@ class RxPatternTest extends haxe.unit.TestCase
         assertMatch("xyz^\\", RxPattern.Char("a") | RxPattern.String("xyz^\\"));
         assertPatStrEquals("[a-c]*|xyz", RxPattern.CharSet("abc").any() | RxPattern.String("xyz"));
         assertPatStrEquals("[a-c]*|(?:xyz)+", RxPattern.CharSet("abc").any() | RxPattern.String("xyz").some());
+        assertPatStrEquals("[a-c]*|(?:xyz)+", RxPattern.CharSetLit("abc").any() | RxPattern.String("xyz").some());
         assertPatStrEquals("[a-c]?", RxPattern.CharSet("abc").option());
         assertMatch("\u{12345}", RxPattern.AssertFirst() + RxPattern.AnyCodePoint() + RxPattern.AssertEnd());
         //assertMatch("\u{12345}", RxPattern.AssertFirst() + RxPattern.AnyExceptNewLine() + RxPattern.AssertEnd());

@@ -182,6 +182,48 @@ abstract RxPattern(Subpattern)
     }
     public static inline function notInSet(set: CharSet)
         return CharSet(set, true);
+    macro public static function CharSetLit(s: String)
+    {
+        var pos = Context.currentPos();
+        try {
+            var rxp: RxPattern = CharSet(minilatex.util.CharSet.fromString(s), false);
+            var e = {pos: pos, expr: ExprDef.EConst(Constant.CString(rxp.get()))};
+            switch(rxp.getPrec()) {
+            case Precedence.Disjunction:
+                return macro new minilatex.util.RxPattern.Disjunction($e);
+            case Precedence.Alternative:
+                return macro new minilatex.util.RxPattern.Alternative($e);
+            case Precedence.Term:
+                return macro new minilatex.util.RxPattern.Term($e);
+            case Precedence.Atom:
+                return macro new minilatex.util.RxPattern.Atom($e);
+            }
+        } catch (e: String) {
+            Context.error(e, pos);
+            return null;
+        }
+    }
+    macro public static function NotInSetLit(s: String)
+    {
+        var pos = Context.currentPos();
+        try {
+            var rxp: RxPattern = CharSet(minilatex.util.CharSet.fromString(s), true);
+            var e = {pos: pos, expr: ExprDef.EConst(Constant.CString(rxp.get()))};
+            switch(rxp.getPrec()) {
+            case Precedence.Disjunction:
+                return macro new minilatex.util.RxPattern.Disjunction($e);
+            case Precedence.Alternative:
+                return macro new minilatex.util.RxPattern.Alternative($e);
+            case Precedence.Term:
+                return macro new minilatex.util.RxPattern.Term($e);
+            case Precedence.Atom:
+                return macro new minilatex.util.RxPattern.Atom($e);
+            }
+        } catch (e: String) {
+            Context.error(e, pos);
+            return null;
+        }
+    }
 
     public static inline function Group(p: Disjunction): Atom
         return Atom("(" + p.toDisjunction() + ")");
@@ -200,6 +242,8 @@ abstract RxPattern(Subpattern)
     // Accessors
     public inline function get()
         return this.pattern;
+    private inline function getPrec()
+        return this.prec;
     public inline function build(options = "u")
         return new EReg(this.pattern, options);
     public static inline function buildPatternString(x: Disjunction)

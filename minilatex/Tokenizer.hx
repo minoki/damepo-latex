@@ -56,16 +56,16 @@ class Tokenizer
         this.currentLine = 1;
         this.currentColumn = 0;
         this.state = State.NewLine;
-        this.rxSpaces = makeAnchoredRx(P.CharSet(CharSet.fromStringLiteral(" \t")).some());
+        this.rxSpaces = makeAnchoredRx(P.CharSetLit(" \t").some());
         var commentChar = P.Char("%");
         var escapeChar = P.Char("\\");
-        var space = P.CharSet(CharSet.fromStringLiteral(" \t"));
+        var space = P.CharSetLit(" \t");
         var newLine = P.NewLine();
 
         var comment = commentChar + P.AnyExceptNewLine().any()
               + newLine.option();
         var letters = CharClass.Letter;
-        var other = RxPattern.notInSet(CharSet.fromStringLiteral("%\\"));
+        var other = RxPattern.NotInSetLit("%\\");
         this.rxToken_atother =
             makeAnchoredRx(P.Group(comment)
                            | (escapeChar + (P.Group(letters.some())
