@@ -1,4 +1,37 @@
 package minilatex.util;
+#if python
+import python.Set;
+@:forward(length, iterator, add, remove, has)
+abstract IntSet(Set<Int>) from Set<Int>
+{
+    inline function new(a) this = a;
+    inline function toNativeSet(): Set<Int> return this;
+    public static inline function empty()
+    {
+        return new IntSet(new Set());
+    }
+    public static inline function singleton(x: Int)
+    {
+        return new IntSet(new Set([x]));
+    }
+    public static inline function fromRange(from: Int, to: Int)
+    {
+        return new IntSet(new Set([for (x in from ... to) x]));
+    }
+    public static inline function fromIterator(it: Iterator<Int>)
+    {
+        var set = empty();
+        for (x in it) {
+            set.add(x);
+        }
+        return set;
+    }
+    public static function union(x: IntSet, y: IntSet)
+    {
+        return x.toNativeSet().union(y.toNativeSet());
+    }
+}
+#else
 @:forward(length, iterator)
 abstract IntSet(Array<Int>)
 {
@@ -112,3 +145,4 @@ abstract IntSet(Array<Int>)
         return new IntSet(a);
     }
 }
+#end
