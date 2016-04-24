@@ -55,6 +55,8 @@ abstract RxPattern(Subpattern)
     {
         #if (js || target_js)
             return new Disjunction("[\\u0000-\\uD7FF\\uE000-\\uFFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]");
+        #elseif python
+            return new Atom("[\\u0000-\\U0010FFFF]");
         #else
             return new Atom("[\\x{0}-\\x{10FFFF}]");
         #end
