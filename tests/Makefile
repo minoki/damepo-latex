@@ -22,6 +22,8 @@ $1-cpp:
 $1-java:
 	haxe -main $2 -cp .. -java $1-java -cmd "java -jar $1-java/$2.jar"
 
+$1-all: $1-neko $1-js $1-php $1-python $1-cpp $1-java
+
 .PHONY: $1-neko $1-js $1-php $1-python $1-cpp $1-java
 endef
 
