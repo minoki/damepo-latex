@@ -31,11 +31,57 @@ abstract IntSet(Set<Int>) from Set<Int>
         return x.toNativeSet().union(y.toNativeSet());
     }
 }
+#elseif java
+import java.NativeArray;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+@:forward(length, iterator, add, remove, has)
+abstract IntSet(HashSet<Int>) from HashSet<Int>
+{
+    inline function new(a) this = a;
+    inline function toNativeSet(): HashSet<Int> return this;
+    public var length(get, never): Int;
+    public inline function get_length()
+    {
+        return this.size();
+    }
+    public inline function has(x: Int)
+    {
+        return this.contains;
+    }
+    public static inline function empty()
+    {
+        return new IntSet(new HashSet());
+    }
+    public static inline function singleton(x: Int)
+    {
+        var set = empty();
+        set.add(x);
+        return set;
+    }
+    public static inline function fromRange(from: Int, to: Int)
+    {
+        return fromIterator(from ... to);
+    }
+    public static inline function fromIterator(it: Iterator<Int>)
+    {
+        var set = empty();
+        for (x in it) {
+            set.add(x);
+        }
+        return set;
+    }
+    public static function union(x: IntSet, y: IntSet)
+    {
+        return x.toNativeSet().clone().addAll(y.toNativeSet());
+    }
+}
 #else
 @:forward(length, iterator)
 abstract IntSet(Array<Int>)
 {
-    public inline function new(a)
+    inline function new(a)
     {
         this = a;
     }
