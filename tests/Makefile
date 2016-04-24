@@ -1,42 +1,31 @@
 all: test-neko test-js test-php
 
-test-neko:
-	haxe -main Main -cp .. -x test
+.PHONY: all
 
-test-js:
-	haxe -main Main -cp .. -js test.js -cmd "node test.js"
+# $(call test-targets,<name>,<Main Class>)
+define test-targets
+$1-neko:
+	haxe -main $2 -cp .. -x $1
 
-test-php:
-	haxe -main Main -cp .. -php test-php -cmd "php test-php/index.php"
+$1-js:
+	haxe -main $2 -cp .. -js $1.js -cmd "node $1.js"
 
-test-python:
-	haxe -main Main -cp .. -python test.py -cmd "python3 test.py"
+$1-php:
+	haxe -main $2 -cp .. -php $1-php -cmd "php $1-php/index.php"
 
-test-cpp:
-	haxe -main Main -cp .. -cpp test-cpp -cmd "test-cpp/Main"
+$1-python:
+	haxe -main $2 -cp .. -python $1.py -cmd "python3 $1.py"
 
-test-java:
-	haxe -main Main -cp .. -java test-java -cmd "java -jar test-java/Main.jar"
+$1-cpp:
+	haxe -main $2 -cp .. -cpp $1-cpp -cmd "$1-cpp/$2"
 
-.PHONY: all test-neko test-js test-python test-php test-cpp test-java
+$1-java:
+	haxe -main $2 -cp .. -java $1-java -cmd "java -jar $1-java/$2.jar"
 
-RxPatternTest-neko:
-	haxe -main RxPatternTest -cp .. -x RxPatternTest
+.PHONY: $1-neko $1-js $1-php $1-python $1-cpp $1-java
+endef
 
-RxPatternTest-js:
-	haxe -main RxPatternTest -cp .. -js RxPatternTest.js -cmd "node RxPatternTest.js"
-
-RxPatternTest-php:
-	haxe -main RxPatternTest -cp .. -php RxPatternTest-php -cmd "php RxPatternTest-php/index.php"
-
-RxPatternTest-python:
-	haxe -main RxPatternTest -cp .. -python RxPatternTest.py -cmd "python3 RxPatternTest.py"
-
-RxPatternTest-cpp:
-	haxe -main RxPatternTest -cp .. -cpp RxPatternTest-cpp -cmd "RxPatternTest-cpp/RxPatternTest"
-
-RxPatternTest-java:
-	haxe -main RxPatternTest -cp .. -java RxPatternTest-java -cmd "java -jar RxPatternTest-java/RxPatternTest.jar"
-
-.PHONY: RxPatternTest-neko RxPatternTest-js RxPatternTest-python RxPatternTest-php RxPatternTest-cpp RxPatternTest-java
+$(eval $(call test-targets,test,Main))
+$(eval $(call test-targets,UnicodeUtilTest,UnicodeUtilTest))
+$(eval $(call test-targets,RxPatternTest,RxPatternTest))
 
