@@ -216,7 +216,7 @@ abstract RxPattern(Subpattern)
             return Atom("[]");
         }
     }
-    public static inline function notInSet(set: CharSet)
+    public static inline function NotInSet(set: CharSet)
         return CharSet(set, true);
     macro public static function CharSetLit(s: String)
     {
