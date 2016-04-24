@@ -90,11 +90,17 @@ class UnicodeUtil
     {
         return new CodePointIterator(s);
     }
-    public static function codePointAt(c: String, i: Int)
+    #if java
+        inline
+    #end
+    public static function codePointAt(c: String, i: Int): Int
     {
-        var x = c.charCodeAt(i);
-        #if (js || java)
+        #if java
+            // TODO: if c == null?
+            return (untyped c).codePointAt(i);
+        #elseif js
             /* decode UTF-16 sequence */
+            var x = c.charCodeAt(i);
             if (0xD800 <= x && x <= 0xDFFF) {
                 if (0xDC00 <= x) {
                     throw "codePointAt: invalid tail surrogate";
@@ -110,6 +116,7 @@ class UnicodeUtil
             }
         #elseif (cpp || neko || php)
             /* decode UTF-8 sequence */
+            var x = c.charCodeAt(i);
             if (x < 0x80) {
                 return x;
             } else {
@@ -158,7 +165,11 @@ class UnicodeUtil
     }
     public static function fromCodePoint(c: Int)
     {
-        #if (js || java)
+        #if java
+            var a = new java.NativeArray<Int>(1);
+            a[0] = c;
+            return new String(untyped a, 0, 1);
+        #elseif js
             /* encode UTF-16 */
             if (c < 0x10000) {
                 if (0xD800 <= c && c <= 0xDFFF) {
