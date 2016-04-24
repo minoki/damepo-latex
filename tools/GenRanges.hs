@@ -3,13 +3,15 @@ import Numeric
 import Control.Arrow
 import Data.Char (ord,chr,toUpper)
 import Data.List
-import System.Environment (getArgs)
+import System.Environment
+import System.Exit
+import System.IO
 
 leftpadWith0 :: Int -> String -> String
 leftpadWith0 n s | length s < n = leftpadWith0 n ('0':s)
                  | otherwise = s
 
-data UnicodeEscStyle = ECMAScriptStyle | PCREStyle deriving Eq
+data UnicodeEscStyle = ECMAScriptStyle | PCREStyle | PythonStyle deriving Eq
 
 showHEX = (map toUpper .) . showHex
 
@@ -22,6 +24,10 @@ showUnicodeEsc ECMAScriptStyle c | chr c `elem` "-]\\" = ['\\', chr c]
 showUnicodeEsc PCREStyle c | chr c `elem` "-]\\" = ['\\', chr c]
                            | c < 0x80 = [chr c]
                            | otherwise = "\\\\x{" ++ showHEX c "}"
+showUnicodeEsc PythonStyle c | chr c `elem` "-]\\" = ['\\', chr c]
+                             | c < 0x80 = [chr c]
+                             | c < 0x10000 = "\\\\u" ++ leftpadWith0 4 (showHEX c "")
+                             | otherwise = "\\\\U" ++ leftpadWith0 8 (showHEX c "")
 
 showUnicodeEscRange :: UnicodeEscStyle -> Int -> Int -> String
 showUnicodeEscRange style x y | x == y = showUnicodeEsc style x
@@ -105,12 +111,42 @@ compareBySnd (x,y) (x',y') = case compare y y' of
   EQ -> compare x x'
   c -> c
 
-main = do args <- getArgs
-          let (style,rest) | ("--pcre":rest) <- args = (PCREStyle,rest)
-                           | ("--es":rest) <- args = (ECMAScriptStyle,rest)
-                           | otherwise = (ECMAScriptStyle,args)
-              catPrefix | x:_ <- rest = x
-                        | otherwise = "L" -- Letter
+data UnicodeEncodingMode = UTF32Mode | SurrogatePairsMode deriving Eq
+usage :: IO ()
+usage = do name <- getProgName
+           hPutStrLn stderr $ "Usage: " ++ name ++ " [option] category"
+           hPutStrLn stderr "Options:"
+           hPutStrLn stderr "\t--pcre: PCRE style (\\x{HHHH} for Unicode escape)"
+           hPutStrLn stderr "\t--es: ECMAScript style (\\uHHHH or \\u{HHHHH} for Unicode escape)"
+           hPutStrLn stderr "\t--python: Python style (\\uHHHH or \\UHHHHHHHH for Unicode escape)"
+           hPutStrLn stderr "\t--surrogate-pairs: Use surrogate pairs to represent code points > U+FFFF (for ECMAScript 5)"
+           hPutStrLn stderr "\t--utf32: Assume the processor can natively handle code points > U+FFFF (for ECMAScript 6 with unicode flag)"
+           hPutStrLn stderr "Category: Prefix of short General Category"
+parseArgs :: [String] -> IO (UnicodeEscStyle,UnicodeEncodingMode,String)
+parseArgs s = loop s (Nothing,Nothing,Nothing)
+  where loop :: [String] -> (Maybe UnicodeEscStyle,Maybe UnicodeEncodingMode,Maybe String) -> IO (UnicodeEscStyle,UnicodeEncodingMode,String)
+        loop [] (_,_,Nothing) = usage >> exitFailure
+        loop [] (x,y,Just catPrefix) = let style = maybe ECMAScriptStyle id x
+                                           defaultMode | style == ECMAScriptStyle = SurrogatePairsMode
+                                                       | otherwise = UTF32Mode
+                                       in return (style,maybe defaultMode id y,catPrefix)
+        loop ("--es":ss) (x,y,z) | x == Nothing = loop ss (Just ECMAScriptStyle,y,z)
+                                 | otherwise = errMsg "Escape sequence style already set."
+        loop ("--pcre":ss) (x,y,z) | x == Nothing = loop ss (Just PCREStyle,y,z)
+                                   | otherwise = errMsg "Escape sequence style already set."
+        loop ("--python":ss) (x,y,z) | x == Nothing = loop ss (Just PythonStyle,y,z)
+                                     | otherwise = errMsg "Escape sequence style already set."
+        loop ("--surrogate-pairs":ss) (x,y,z) | y == Nothing = loop ss (x,Just SurrogatePairsMode,z)
+                                              | otherwise = errMsg "Encoding mode is already set."
+        loop ("--utf32":ss) (x,y,z) | y == Nothing = loop ss (x,Just UTF32Mode,z)
+                                    | otherwise = errMsg "Encoding mode is already set."
+        loop (s:ss) (x,y,z) | z == Nothing = loop ss (x,y,Just s)
+                            | otherwise = errMsg "Unicode General Category is already set."
+        errMsg msg = do hPutStrLn stderr $ "Error: " ++ msg
+                        usage
+                        exitFailure
+
+main = do (style,mode,catPrefix) <- getArgs >>= parseArgs
           l <- lines <$> readFile "UnicodeData.txt"
           let codepoints = parseUnicodeData l
               letters = map fst $ filter (isPrefixOf catPrefix . snd) codepoints
@@ -121,7 +157,7 @@ main = do args <- getArgs
               surrogateGroups2 :: [([(Int,Int)],[(Int,Int)])]
               surrogateGroups2 = sortBy compareByFst $ map (first setToRanges) $ groupBySnd $ sortBy compareBySnd surrogateGroups
               surrogatesRx :: [String]
-              surrogatesRx = map (uncurry (++) . (buildRangeRx ECMAScriptStyle *** buildRangeRx ECMAScriptStyle)) surrogateGroups2
-          if style == ECMAScriptStyle
+              surrogatesRx = map (uncurry (++) . (buildRangeRx style *** buildRangeRx style)) surrogateGroups2
+          if mode == SurrogatePairsMode
           then putStrLn (concat $ intersperse "|" $ bmprx:surrogatesRx)
           else putStrLn (buildRangeRx style $ setToRanges letters)
