@@ -18,6 +18,9 @@ class RxPatternTest extends haxe.unit.TestCase
     public function testBasic()
     {
         assertPatStrEquals("a", RxPattern.Char("a"));
+        assertPatStrEquals("\\\\", RxPattern.CharLit("\\"));
+        assertPatStrEquals("\\^", RxPattern.CharLit("^"));
+        assertMatch("\u{12345}", RxPattern.CharLit("\u{12345}"));
         assertPatStrEquals("a|xyz\\^\\\\", RxPattern.Char("a") | RxPattern.String("xyz^\\"));
         assertPatStrEquals("a|xyz\\^\\\\", RxPattern.Char("a") | RxPattern.StringLit("xyz^\\"));
         assertMatch("a", RxPattern.Char("a") | RxPattern.String("xyz^\\"));

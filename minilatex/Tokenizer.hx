@@ -57,8 +57,8 @@ class Tokenizer
         this.currentColumn = 0;
         this.state = State.NewLine;
         this.rxSpaces = makeAnchoredRx(P.CharSetLit(" \t").some());
-        var commentChar = P.Char("%");
-        var escapeChar = P.Char("\\");
+        var commentChar = P.CharLit("%");
+        var escapeChar = P.CharLit("\\");
         var space = P.CharSetLit(" \t");
         var newLine = P.NewLine();
 
@@ -75,7 +75,7 @@ class Tokenizer
                            | P.Group(other));
         this.rxToken_atletter =
             makeAnchoredRx(P.Group(comment)
-                           | (escapeChar + (P.Group((letters | P.Char("@")).some())
+                           | (escapeChar + (P.Group((letters | P.CharLit("@")).some())
                                             | P.Group(P.AnyCodePoint() | P.Empty())))
                            | P.Group(space)
                            | P.Group(newLine)

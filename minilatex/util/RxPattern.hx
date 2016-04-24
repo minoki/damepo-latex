@@ -62,8 +62,9 @@ abstract RxPattern(Subpattern)
         #end
     }
     static var rxSpecialChars = ~/^[\^\$\\\.\*\+\?\(\)\[\]\{\}\|\t\n\r]$/;
-    static inline function escapeChar(c: String)
+    static function escapeChar(c: String)
     {
+        /*
         if (c == '^' || c == '$' || c == '\\' || c == '.'
             || c == '*' || c == '+' || c == '?'
             || c == '(' || c == ')' || c == '[' || c == ']'
@@ -78,7 +79,7 @@ abstract RxPattern(Subpattern)
         } else {
             return c;
         }
-        /*
+        */
         if (rxSpecialChars.match(c)) {
             return "\\" + c;
         } else  {
@@ -89,7 +90,6 @@ abstract RxPattern(Subpattern)
             case c: return c;
             }
         }
-        */
         /*
         switch (c) {
         case '^' | '$' | '\\' | '.' | '*' | '+' | '?'
@@ -104,6 +104,25 @@ abstract RxPattern(Subpattern)
     }
     public static inline function Char(c: String)
         return Atom(escapeChar(c));
+    macro public static function CharLit(c: String)
+    {
+        var pos = Context.currentPos();
+        try {
+            var r = ~/^.$/us;
+            if (r.match(c)) {
+                var s = escapeChar(c);
+                var e = {pos: pos, expr: ExprDef.EConst(Constant.CString(s))};
+                return macro new minilatex.util.RxPattern.Atom($e);
+            } else {
+                Context.error("minilatex.util.RxPattern.CharLit: not single character", pos);
+                return null;
+            }
+        } catch (e: String) {
+            Context.error(e, pos);
+            return null;
+        }
+    }
+
     public static inline function String(s: String)
         return Alternative(~/[\^\$\\\.\*\+\?\(\)\[\]\{\}\|\t\n\r]/g.map(s, function(e) return escapeChar(e.matched(0))));
     macro public static function StringLit(s: String)
