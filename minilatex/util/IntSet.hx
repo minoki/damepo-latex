@@ -1,4 +1,5 @@
 package minilatex.util;
+@:forward(length, iterator)
 abstract IntSet(Array<Int>)
 {
     public inline function new(a)
@@ -25,7 +26,7 @@ abstract IntSet(Array<Int>)
         }
         return set;
     }
-    public function contains(x: Int)
+    public function has(x: Int)
     {
         var u = this.length;
         var l = 0;
@@ -73,14 +74,6 @@ abstract IntSet(Array<Int>)
                 return;
             }
         }
-    }
-    public inline function size()
-    {
-        return this.length;
-    }
-    public inline function iterator(): Iterator<Int>
-    {
-        return this.iterator();
     }
     public inline function _getArray(): Array<Int>
     {

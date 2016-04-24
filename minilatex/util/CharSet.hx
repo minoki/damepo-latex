@@ -6,6 +6,7 @@ import haxe.macro.ComplexTypeTools;
 import minilatex.util.IntSet;
 import minilatex.util.UnicodeUtil;
 using minilatex.util.UnicodeUtil;
+@:forward(length)
 abstract CharSet(IntSet)
 {
     public inline function new(s)
@@ -49,16 +50,16 @@ abstract CharSet(IntSet)
     {
         return this;
     }
-    public inline function containsCodePoint(x: Int)
+    public inline function hasCodePoint(x: Int)
     {
-        return this.contains(x);
+        return this.has(x);
     }
-    public inline function contains(c: String)
+    public inline function has(c: String)
     {
         if (!UnicodeUtil.rxSingleCodepoint.match(c)) {
-            throw "CharSet.contains: invalid charater";
+            throw "CharSet.has: invalid charater";
         }
-        return this.contains(UnicodeUtil.codePointAt(c, 0));
+        return this.has(UnicodeUtil.codePointAt(c, 0));
     }
     public inline function addCodePoint(x: Int)
     {
@@ -74,10 +75,6 @@ abstract CharSet(IntSet)
     public inline function removeCodePoint(x: Int)
     {
         this.remove(x);
-    }
-    public inline function size()
-    {
-        return this.size();
     }
     public inline function codePointIterator(): Iterator<Int>
     {
