@@ -38,7 +38,6 @@ class Subpattern
     }
 }
 
-@forward(withPrec)
 abstract RxPattern(Subpattern)
 {
     public inline function new(pattern: String, prec: Precedence)
@@ -155,6 +154,22 @@ abstract RxPattern(Subpattern)
         return Term("^");
     public static inline function AssertEnd()
         return Term("$");
+    #if js
+    public static inline function AssertStartOfSubject()
+        return Term("^");
+    public static inline function AssertEndOfSubject()
+        return Term("$");
+    #elseif python
+    public static inline function AssertStartOfSubject()
+        return Term("\\A");
+    public static inline function AssertEndOfSubject()
+        return Term("\\Z");
+    #else // (neko || cpp || php || java || cs)
+    public static inline function AssertStartOfSubject()
+        return Term("\\A");
+    public static inline function AssertEndOfSubject()
+        return Term("\\z");
+    #end
 
     public static function CharSet(set: CharSet, invert = false): RxPattern
     {
@@ -296,6 +311,7 @@ abstract RxPattern(Subpattern)
     @:to public inline function asAtom() return new Atom(toAtom());
 }
 
+@:notNull
 abstract Disjunction(String)
 {
     public inline function new(pattern: String) this = pattern;
