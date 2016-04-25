@@ -25,6 +25,16 @@ class UnicodeUtilCase extends haxe.unit.TestCase
         assertTrue(UnicodeUtil.rxSingleCodepoint.match("\u3042"));
         assertTrue(UnicodeUtil.rxSingleCodepoint.match("\u{12345}"));
     }
+    public function testCodepointIterator()
+    {
+        var it = UnicodeUtil.codePointIterator("\u0000x\u3042\u{12345}\u{20A0}");
+        assertEquals(it.next(), 0);
+        assertEquals(it.next(), 'x'.charCodeAt(0));
+        assertEquals(it.next(), 0x3042);
+        assertEquals(it.next(), 0x12345);
+        assertEquals(it.next(), 0x20A0);
+        assertFalse(it.hasNext());
+    }
 }
 class UnicodeUtilTest
 {
