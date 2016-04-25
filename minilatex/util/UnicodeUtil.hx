@@ -18,7 +18,7 @@ private class CodePointIterator
     public function next()
     {
         var x = UnicodeUtil.codePointAt(this.s, this.index++);
-        #if (js || java)
+        #if (js || java || cs)
             /* UTF-16 */
             if (x >= 0x10000) {
                 this.index++;
@@ -38,7 +38,7 @@ private class CodePointIterator
 }
 class UnicodeUtil
 {
-    #if js
+    #if (js || cs)
         public static var rxSingleCodepoint = ~/^(?:[\u0000-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF])$/;
     #else // if (neko || cpp || php || flash || java)
         public static var rxSingleCodepoint = ~/^.$/us; /* s: PCRE_DOTALL */
@@ -55,7 +55,7 @@ class UnicodeUtil
         #if java
             // TODO: if c == null?
             return (untyped c).codePointAt(i);
-        #elseif js
+        #elseif (js || cs)
             /* decode UTF-16 sequence */
             var x = c.charCodeAt(i);
             if (0xD800 <= x && x <= 0xDFFF) {
@@ -125,7 +125,7 @@ class UnicodeUtil
         #if java
             var a = java.NativeArray.make(c);
             return new String(untyped a, 0, 1);
-        #elseif js
+        #elseif (js || cs)
             /* encode UTF-16 */
             if (c < 0x10000) {
                 if (0xD800 <= c && c <= 0xDFFF) {
