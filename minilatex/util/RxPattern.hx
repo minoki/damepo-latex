@@ -58,7 +58,7 @@ abstract RxPattern(Subpattern)
         return new Atom(pattern);
     public static inline function AnyCodePoint()
     {
-        #if (js || target_js)
+        #if (js || cs || target_js)
             return new Disjunction("[\\u0000-\\uD7FF\\uE000-\\uFFFF]|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]");
         #elseif python
             return new Atom("[\\u0000-\\U0010FFFF]");
