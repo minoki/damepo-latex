@@ -1,4 +1,7 @@
 package minilatex.util;
+#if java
+   import java.NativeArray;
+#end
 private class CodePointIterator
 {
     var s: String;
@@ -120,8 +123,7 @@ class UnicodeUtil
     public static function fromCodePoint(c: Int)
     {
         #if java
-            var a = new java.NativeArray<Int>(1);
-            a[0] = c;
+            var a = java.NativeArray.make(c);
             return new String(untyped a, 0, 1);
         #elseif js
             /* encode UTF-16 */
