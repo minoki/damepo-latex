@@ -9,10 +9,12 @@ using minilatex.util.UnicodeUtil;
 @:forward(length)
 abstract CharSet(IntSet)
 {
+    @:extern
     public inline function new(s)
     {
         this = s;
     }
+    @:extern
     public static inline function empty()
     {
         return new CharSet(IntSet.empty());
@@ -25,6 +27,7 @@ abstract CharSet(IntSet)
         var x = UnicodeUtil.codePointAt(c, 0);
         return new CharSet(IntSet.singleton(x));
     }
+    @:extern
     @:from
     public static inline function fromString(s: String)
     {
@@ -46,10 +49,12 @@ abstract CharSet(IntSet)
             return null;
         }
     }
+    @:extern
     public inline function getCodePointSet()
     {
         return this;
     }
+    @:extern
     public inline function hasCodePoint(x: Int)
     {
         return this.has(x);
@@ -61,6 +66,7 @@ abstract CharSet(IntSet)
         }
         return this.has(UnicodeUtil.codePointAt(c, 0));
     }
+    @:extern
     public inline function addCodePoint(x: Int)
     {
         this.add(x);
@@ -72,11 +78,13 @@ abstract CharSet(IntSet)
         }
         this.add(UnicodeUtil.codePointAt(c, 0));
     }
+    @:extern
     public inline function removeCodePoint(x: Int)
     {
         this.remove(x);
     }
-    public inline function codePointIterator(): Iterator<Int>
+    #if !cs @:extern inline #end
+    public function codePointIterator()
     {
         return this.iterator();
     }

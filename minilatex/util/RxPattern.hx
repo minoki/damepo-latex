@@ -19,6 +19,7 @@ abstract Precedence(Int)
 }
 
 /* A class to construct the pattern string with minimum number of parenthesis */
+@:unreflective
 @:final
 @:allow(minilatex.util.RxPattern)
 class Subpattern
@@ -40,14 +41,19 @@ class Subpattern
 
 abstract RxPattern(Subpattern)
 {
+    @:extern
     public inline function new(pattern: String, prec: Precedence)
         this = new Subpattern(pattern, prec);
+    @:extern
     public static inline function Disjunction(pattern: String)
         return new Disjunction(pattern);
+    @:extern
     public static inline function Alternative(pattern: String)
         return new Alternative(pattern);
+    @:extern
     public static inline function Term(pattern: String)
         return new Term(pattern);
+    @:extern
     public static inline function Atom(pattern: String)
         return new Atom(pattern);
     public static inline function AnyCodePoint()
@@ -101,6 +107,7 @@ abstract RxPattern(Subpattern)
         }
         */
     }
+    @:extern
     public static inline function Char(c: String)
         return Atom(escapeChar(c));
     macro public static function CharLit(c: String)
@@ -144,29 +151,40 @@ abstract RxPattern(Subpattern)
     public static var AssertFirst = Term("^");
     public static var AssertEnd = Term("$");
     */
+    @:extern
     public static inline function AnyExceptNewLine()
         return Atom(".");
+    @:extern
     public static inline function NewLine()
         return Atom("\\n");
+    @:extern
     public static inline function Empty()
         return Alternative("");
+    @:extern
     public static inline function AssertFirst()
         return Term("^");
+    @:extern
     public static inline function AssertEnd()
         return Term("$");
     #if js
+    @:extern
     public static inline function AssertStartOfSubject()
         return Term("^");
+    @:extern
     public static inline function AssertEndOfSubject()
         return Term("$");
     #elseif python
+    @:extern
     public static inline function AssertStartOfSubject()
         return Term("\\A");
+    @:extern
     public static inline function AssertEndOfSubject()
         return Term("\\Z");
     #else // (neko || cpp || php || java || cs)
+    @:extern
     public static inline function AssertStartOfSubject()
         return Term("\\A");
+    @:extern
     public static inline function AssertEndOfSubject()
         return Term("\\z");
     #end
@@ -216,6 +234,7 @@ abstract RxPattern(Subpattern)
             return Atom("[]");
         }
     }
+    @:extern
     public static inline function NotInSet(set: CharSet)
         return CharSet(set, true);
     macro public static function CharSetLit(s: String)
@@ -261,84 +280,119 @@ abstract RxPattern(Subpattern)
         }
     }
 
+    @:extern
     public static inline function Group(p: Disjunction): Atom
         return Atom("(" + p.toDisjunction() + ")");
 
     // Operations on RxPatterns
+    @:extern
     @:op(A + B)
     public inline function followedBy(rhs: Alternative)
     {
         return new Alternative(toAlternative() + rhs.toAlternative());
     }
+    @:extern
     @:op(A | B)
     public inline function choice(rhs: Disjunction)
     {
         return new Disjunction(toDisjunction() + "|" + rhs.toDisjunction());
     }
     // Accessors
+    @:extern
     public inline function get()
         return this.pattern;
+    @:extern
     private inline function getPrec()
         return this.prec;
+    @:extern
     public inline function build(options = "u")
         return new EReg(this.pattern, options);
+    @:extern
     public static inline function buildPatternString(x: Disjunction)
         return x.get();
+    @:extern
     public static inline function buildEReg(x, options = "u")
         return new EReg(buildPatternString(x), options);
 
+    @:extern
     public inline function toDisjunction()
         return this.pattern;
+    @:extern
     public inline function toAlternative()
         return this.withPrec(Precedence.Alternative);
+    @:extern
     public inline function toTerm()
         return this.withPrec(Precedence.Term);
+    @:extern
     public inline function toAtom()
         return this.withPrec(Precedence.Atom);
 
     // Quantifiers
+    @:extern
     public inline function option()
         return Term(toAtom() + "?");
+    @:extern
     public inline function any()
         return Term(toAtom() + "*");
+    @:extern
     public inline function some()
         return Term(toAtom() + "+");
 
     // Implicit casts
+    @:extern
     @:to public inline function asDisjunction() return new Disjunction(toDisjunction());
+    @:extern
     @:to public inline function asAlternative() return new Alternative(toAlternative());
+    @:extern
     @:to public inline function asTerm() return new Term(toTerm());
+    @:extern
     @:to public inline function asAtom() return new Atom(toAtom());
 }
 
 @:notNull
 abstract Disjunction(String)
 {
+    @:extern
     public inline function new(pattern: String) this = pattern;
 
     // Accessors
+    @:extern
     public inline function get() return this;
+    @:extern
     public inline function build(options = "u") return new EReg(this, options);
+    @:extern
     public inline function toDisjunction() return this;
+    @:extern
     public inline function toAlternative() return "(?:" + this + ")";
+    @:extern
     public inline function toTerm() return "(?:" + this + ")";
+    @:extern
     public inline function toAtom() return "(?:" + this + ")";
 
     // Implicit casts
+    @:extern
     @:to public inline function asAlternative() return new Alternative(toAlternative());
+    @:extern
     @:to public inline function asTerm() return new Term(toTerm());
+    @:extern
     @:to public inline function asAtom() return new Atom(toAtom());
+    @:extern
     @:to public inline function asPattern() return new RxPattern(this, Precedence.Disjunction);
 
     // Quantifiers
+    @:extern
     public inline function option() return new Term(toAtom() + "?");
+    @:extern
     public inline function any() return new Term(toAtom() + "*");
+    @:extern
     public inline function some() return new Term(toAtom() + "+");
 
     // Binary operators
+    @:extern
     @:op(A + B)
     public inline function followedBy(rhs: Alternative)
         return new Alternative(toAlternative() + rhs.toAlternative());
+    @:extern
     @:op(A | B)
     public inline function choice(rhs: Disjunction)
         return new Disjunction(toDisjunction() + "|" + rhs.toDisjunction());
@@ -346,24 +400,35 @@ abstract Disjunction(String)
 @:forward(get, build, option, any, some)
 abstract Alternative(Disjunction)
 {
+    @:extern
     public inline function new(pattern: String) this = new Disjunction(pattern);
 
     // Accessors
+    @:extern
     public inline function toDisjunction() return this.get();
+    @:extern
     public inline function toAlternative() return this.get();
+    @:extern
     public inline function toTerm() return "(?:" + this.get() + ")";
+    @:extern
     public inline function toAtom() return "(?:" + this.get() + ")";
 
     // Implicit casts
+    @:extern
     @:to public inline function asDisjunction() return this;
+    @:extern
     @:to public inline function asTerm() return new Term(toTerm());
+    @:extern
     @:to public inline function asAtom() return new Atom(toAtom());
+    @:extern
     @:to public inline function asPattern() return new RxPattern(this.get(), Precedence.Alternative);
 
     // Binary operators
+    @:extern
     @:op(A + B)
     public inline function followedBy(rhs: Alternative)
         return new Alternative(toAlternative() + rhs.toAlternative());
+    @:extern
     @:op(A | B)
     public inline function choice(rhs: Disjunction)
         return new Disjunction(toDisjunction() + "|" + rhs.toDisjunction());
@@ -371,24 +436,35 @@ abstract Alternative(Disjunction)
 @:forward(get, build, option, any, some)
 abstract Term(Alternative)
 {
+    @:extern
     public inline function new(pattern: String) this = new Alternative(pattern);
 
     // Accessors
+    @:extern
     public inline function toDisjunction() return this.get();
+    @:extern
     public inline function toAlternative() return this.get();
+    @:extern
     public inline function toTerm() return this.get();
+    @:extern
     public inline function toAtom() return "(?:" + this.get() + ")";
 
     // Implicit casts
+    @:extern
     @:to public inline function asDisjunction() return this.asDisjunction();
+    @:extern
     @:to public inline function asAlternative() return this;
+    @:extern
     @:to public inline function asAtom() return new Atom(toAtom());
+    @:extern
     @:to public inline function asPattern() return new RxPattern(this.get(), Precedence.Term);
 
     // Binary operators
+    @:extern
     @:op(A + B)
     public inline function followedBy(rhs: Alternative)
         return new Alternative(toAlternative() + rhs.toAlternative());
+    @:extern
     @:op(A | B)
     public inline function choice(rhs: Disjunction)
         return new Disjunction(toDisjunction() + "|" + rhs.toDisjunction());
@@ -396,29 +472,43 @@ abstract Term(Alternative)
 @:forward(get, build)
 abstract Atom(Term)
 {
+    @:extern
     public inline function new(pattern: String) this = new Term(pattern);
 
     // Accessors
+    @:extern
     public inline function toDisjunction() return this.get();
+    @:extern
     public inline function toAlternative() return this.get();
+    @:extern
     public inline function toTerm() return this.get();
+    @:extern
     public inline function toAtom() return this.get();
 
     // Implicit casts
+    @:extern
     @:to public inline function asDisjunction() return this.asDisjunction();
+    @:extern
     @:to public inline function asAlternative() return this.asAlternative();
+    @:extern
     @:to public inline function asTerm() return this;
+    @:extern
     @:to public inline function asPattern() return new RxPattern(this.get(), Precedence.Atom);
 
     // Quantifiers (redefine here because toAtom() has different definition from Term)
+    @:extern
     public inline function option() return new Term(toAtom() + "?");
+    @:extern
     public inline function any() return new Term(toAtom() + "*");
+    @:extern
     public inline function some() return new Term(toAtom() + "+");
 
     // Binary operators
+    @:extern
     @:op(A + B)
     public inline function followedBy(rhs: Alternative)
         return new Alternative(toAlternative() + rhs.toAlternative());
+    @:extern
     @:op(A | B)
     public inline function choice(rhs: Disjunction)
         return new Disjunction(toDisjunction() + "|" + rhs.toDisjunction());
