@@ -96,9 +96,25 @@ class ExpansionTestCase extends haxe.unit.TestCase
         default: Type.enumEq(x, y);
         };
     }
+    static function executionResultToString(r: Null<ExecutionResult>)
+    {
+        return switch (r) {
+        case null: "(null)";
+        case Character(c): 'Character(\'${c}\')';
+        case UnknownCommand(name): 'UnknownCommand(${name.toString()})';
+        case Group(c): "Group([" + c.map(executionResultToString).join(", ") + "])";
+        case AlignmentTab: "AlignmentTab";
+        case Subscript: "Subscript";
+        case Superscript: "Superscript";
+        case MathShift: "MathShift";
+        case Space: "Space";
+        }
+    }
     function assertExecEquals(expected: Null<ExecutionResult>, actual: Null<ExecutionResult>, ?c: haxe.PosInfos)
     {
-        assertTrue(executionResultEquals(expected, actual), c);
+        if (!executionResultEquals(expected, actual)) {
+            assertEquals(executionResultToString(expected), executionResultToString(actual), c);
+        }
     }
     public function testBasic()
     {
@@ -140,14 +156,14 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Space);
-        assertExecEquals(it.next(), Character("y"));
-        assertExecEquals(it.next(), Character("x"));
-        assertExecEquals(it.next(), Space);
-        assertExecEquals(it.next(), UnknownCommand(new Token(ControlSequence("par"), null)));
-        assertExecEquals(it.next(), Character("c"));
-        assertExecEquals(it.next(), Character("b"));
-        assertExecEquals(it.next(), Character("a"));
+        assertExecEquals(Space, it.next());
+        assertExecEquals(Character("y"), it.next());
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Space, it.next());
+        assertExecEquals(UnknownCommand(new Token(ControlSequence("par"), null)), it.next());
+        assertExecEquals(Character("c"), it.next());
+        assertExecEquals(Character("b"), it.next());
+        assertExecEquals(Character("a"), it.next());
         assertFalse(it.hasNext());
     }
     public function testOptionalArgument()
@@ -157,10 +173,10 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Character("x"));
-        assertExecEquals(it.next(), Group([Space, Character("y")]));
-        assertExecEquals(it.next(), Character("z"));
-        assertExecEquals(it.next(), Character("x"));
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Group([Space, Character("y")]), it.next());
+        assertExecEquals(Character("z"), it.next());
+        assertExecEquals(Character("x"), it.next());
         assertFalse(it.hasNext());
     }
     public function testCompleteExpansion()
@@ -170,8 +186,8 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Character("y"));
-        assertExecEquals(it.next(), Character("x"));
+        assertExecEquals(Character("y"), it.next());
+        assertExecEquals(Character("x"), it.next());
         assertFalse(it.hasNext());
     }
     public function testEnvironment()
@@ -181,11 +197,11 @@ class ExpansionTestCase extends haxe.unit.TestCase
         var executionProcessor = new ExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
-        assertExecEquals(it.next(), Group([Character("x"),
-                                           Character("1"),
-                                           Character("2"),
-                                           Character("3"),
-                                           Character("y")]));
+        assertExecEquals(Group([Character("x"),
+                                Character("1"),
+                                Character("2"),
+                                Character("3"),
+                                Character("y")]), it.next());
         assertFalse(it.hasNext());
     }
 }
