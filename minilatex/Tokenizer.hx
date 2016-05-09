@@ -23,6 +23,7 @@ class Tokenizer
     var rxSpaces: EReg;
     var rxToken_atletter: EReg;
     var rxToken_atother: EReg;
+    @:extern
     private static inline function makeAnchoredRx(s): EReg
     {
         #if php
@@ -31,6 +32,7 @@ class Tokenizer
             return RxPattern.buildEReg(RxPattern.AtStart >> s, "u");
         #end
     }
+    @:extern
     private static inline function matchAnchoredRx(r: EReg, s: String, pos: Int): Bool
     {
         #if php
