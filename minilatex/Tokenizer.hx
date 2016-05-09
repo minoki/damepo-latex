@@ -2,10 +2,10 @@ package minilatex;
 import minilatex.Token;
 import minilatex.Scope;
 import minilatex.Error;
-import minilatex.util.CharSet;
-import minilatex.util.RxPattern;
-import minilatex.util.RxPattern as P;
-import minilatex.util.CharClass;
+import rxpattern.CharSet;
+import rxpattern.RxPattern;
+import rxpattern.RxPattern as P;
+import rxpattern.GeneralCategory;
 private enum State {
     NewLine;
     SkipSpaces;
@@ -28,7 +28,7 @@ class Tokenizer
         #if php
             return RxPattern.buildEReg(s, "uA");
         #else
-            return RxPattern.buildEReg(RxPattern.AssertFirst() + s, "u");
+            return RxPattern.buildEReg(RxPattern.AtStart >> s, "u");
         #end
     }
     private static inline function matchAnchoredRx(r: EReg, s: String, pos: Int): Bool
@@ -56,27 +56,27 @@ class Tokenizer
         this.currentLine = 1;
         this.currentColumn = 0;
         this.state = State.NewLine;
-        this.rxSpaces = makeAnchoredRx(P.CharSetLit(" \t").some());
-        var commentChar = P.CharLit("%");
-        var escapeChar = P.CharLit("\\");
+        this.rxSpaces = makeAnchoredRx(P.CharSetLit(" \t").many1());
+        var commentChar = P.Char("%");
+        var escapeChar = P.Char("\\");
         var space = P.CharSetLit(" \t");
-        var newLine = P.NewLine();
+        var newLine = P.LineTerminator;
 
-        var comment = commentChar + P.AnyExceptNewLine().any()
-              + newLine.option();
-        var letters = CharClass.Letter;
+        var comment = commentChar >> P.AnyExceptNewLine.many()
+                                  >> newLine.option();
+        var letters = GeneralCategory.Letter;
         var other = RxPattern.NotInSetLit("%\\");
         this.rxToken_atother =
             makeAnchoredRx(P.Group(comment)
-                           | (escapeChar + (P.Group(letters.some())
-                                            | P.Group(P.AnyCodePoint() | P.Empty())))
+                           | (escapeChar >> (P.Group(letters.many1())
+                                             | P.Group(P.AnyCodePoint | P.Empty)))
                            | P.Group(space)
                            | P.Group(newLine)
                            | P.Group(other));
         this.rxToken_atletter =
             makeAnchoredRx(P.Group(comment)
-                           | (escapeChar + (P.Group((letters | P.CharLit("@")).some())
-                                            | P.Group(P.AnyCodePoint() | P.Empty())))
+                           | (escapeChar >> (P.Group((letters | P.Char("@")).many1())
+                                             | P.Group(P.AnyCodePoint | P.Empty)))
                            | P.Group(space)
                            | P.Group(newLine)
                            | P.Group(other));
