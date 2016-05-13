@@ -20,11 +20,12 @@ enum ExpansionResult<E>
     MathShift;
     Space;
 }
+@:final
 class ExpansionToken
 {
     public var token: Token;
     public var depth: Int;
-    public function new(token: Token, depth: Int)
+    public inline function new(token: Token, depth: Int)
     {
         this.token = token;
         this.depth = depth;

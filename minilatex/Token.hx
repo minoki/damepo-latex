@@ -56,11 +56,12 @@ class TokenLocationExtender
         }
     }
 }
+@:final
 class Token
 {
     public var value: TokenValue;
     public var location: Null<TokenLocation>;
-    public function new(value: TokenValue, location: Null<TokenLocation>)
+    public inline function new(value: TokenValue, location: Null<TokenLocation>)
     {
         this.value = value;
         this.location = location;
