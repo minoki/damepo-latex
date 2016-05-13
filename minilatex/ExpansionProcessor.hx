@@ -4,6 +4,7 @@ import minilatex.Scope;
 import minilatex.Tokenizer;
 import minilatex.Error;
 import minilatex.Util;
+import rxpattern.unicode.CodePoint;
 using Token.TokenValueExtender;
 using Util.ArrayExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
@@ -189,6 +190,130 @@ class ExpansionProcessorUtil
         default:
             p.unreadExpansionToken(t);
         }
+    }
+    public static function readInteger(p: IExpansionProcessor): Int
+    {
+        var t = p.expandedToken(true);
+        var sign = 1;
+        while (t != null) {
+            switch (t.value) {
+            case Character('+'):
+            case Character('-'):
+                sign = -sign;
+            default: break;
+            }
+            t = p.expandedToken(true);
+        }
+        if (t == null) {
+            throw new LaTeXError("integer expected");
+        }
+        switch (t.value) {
+        case Character('`'):
+            // character code
+            var u = p.nextToken();
+            if (u == null) {
+                throw new LaTeXError("improper alphabetic constant");
+            }
+            var c = switch (u.token.value) {
+            case Character(c): c;
+            case ControlSequence(name): name;
+            case Space(c): c;
+            case BeginGroup(c): c;
+            case EndGroup(c): c;
+            case AlignmentTab(c): c;
+            case Subscript(c): c;
+            case Superscript(c): c;
+            case MathShift(c): c;
+            case Active(c): c;
+            case Parameter(c): c;
+            };
+            var it = CodePoint.codePointIterator(c);
+            if (!it.hasNext()) {
+                throw new LaTeXError("improper alphabetic constant");
+            }
+            var cp = it.next();
+            if (it.hasNext()) {
+                throw new LaTeXError("improper alphabetic constant");
+            }
+            p.skipOptionalSpace();
+            return sign * cp;
+        case Character('"'): // hexadecimal
+            var u = p.expandedExpansionToken();
+            var buf = new StringBuf();
+            while (u != null) {
+                switch (u.token.value) {
+                case Character(c) if (~/[0-9a-fA-F]/.match(c)):
+                    buf.add(c);
+                    u = p.expandedExpansionToken();
+                case Space(_):
+                    // optional space
+                    break;
+                default:
+                    p.unreadExpansionToken(u);
+                    break;
+                }
+            }
+            var s = buf.toString();
+            if (s == "") {
+                throw new LaTeXError("missing number");
+            }
+            return Std.parseInt("0x" + s);
+        case Character("'"): // octal
+            var u = p.expandedExpansionToken();
+            var buf = new StringBuf();
+            while (u != null) {
+                switch (u.token.value) {
+                case Character(c) if (~/[0-7]/.match(c)):
+                    buf.add(c);
+                    u = p.expandedExpansionToken();
+                case Space(_):
+                    // optional space
+                    break;
+                default:
+                    p.unreadExpansionToken(u);
+                    break;
+                }
+            }
+            var s = buf.toString();
+            if (s == "") {
+                throw new LaTeXError("missing number");
+            }
+            return octalToInt(s);
+        case Character(d) if (TokenUtil.digitValue(d) != null):
+            // decimal
+            var u = p.expandedExpansionToken();
+            var buf = new StringBuf();
+            while (u != null) {
+                switch (u.token.value) {
+                case Character(c) if (~/[0-9]/.match(c)):
+                    buf.add(c);
+                    u = p.expandedExpansionToken();
+                case Space(_):
+                    // optional space
+                    break;
+                default:
+                    p.unreadExpansionToken(u);
+                    break;
+                }
+            }
+            var s = buf.toString();
+            if (s == "") {
+                throw new LaTeXError("missing number");
+            }
+            return Std.parseInt(s);
+        default:
+            // TODO: internal integers
+            throw new LaTeXError("missing number");
+        }
+    }
+    private static function octalToInt(s: String)
+    {
+        var value = 0;
+        for (i in 0...s.length) {
+            var d = "01234567".indexOf(s.charAt(i));
+            value = value * 8 + d;
+        }
+        return value;
     }
 }
 class LocalExpansionProcessor implements IExpansionProcessor
