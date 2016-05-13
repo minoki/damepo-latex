@@ -205,6 +205,61 @@ class ExpansionTestCase extends haxe.unit.TestCase
                                 Character("y")]), it.next());
         assertFalse(it.hasNext());
     }
+    public function testNumber()
+    {
+        var tokenizer = new Tokenizer("\\number+0334 \\number`a \\number'10 \\number\"10");
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
+        var result = executionProcessor.processAll();
+        var it = result.iterator();
+        assertExecEquals(Character("3"), it.next());
+        assertExecEquals(Character("3"), it.next());
+        assertExecEquals(Character("4"), it.next());
+        assertExecEquals(Character("9"), it.next());
+        assertExecEquals(Character("7"), it.next());
+        assertExecEquals(Character("8"), it.next());
+        assertExecEquals(Character("1"), it.next());
+        assertExecEquals(Character("6"), it.next());
+        assertFalse(it.hasNext());
+    }
+    public function testRomannumeral()
+    {
+        var tokenizer = new Tokenizer("\\romannumeral+0334 \\romannumeral`a \\romannumeral'10 \\romannumeral\"10");
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
+        var result = executionProcessor.processAll();
+        var it = result.iterator();
+
+        /* 334 */
+        assertExecEquals(Character("c"), it.next());
+        assertExecEquals(Character("c"), it.next());
+        assertExecEquals(Character("c"), it.next());
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Character("i"), it.next());
+        assertExecEquals(Character("v"), it.next());
+
+        /* 97 */
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Character("c"), it.next());
+        assertExecEquals(Character("v"), it.next());
+        assertExecEquals(Character("i"), it.next());
+        assertExecEquals(Character("i"), it.next());
+
+        /* 8 */
+        assertExecEquals(Character("v"), it.next());
+        assertExecEquals(Character("i"), it.next());
+        assertExecEquals(Character("i"), it.next());
+        assertExecEquals(Character("i"), it.next());
+
+        /* 16 */
+        assertExecEquals(Character("x"), it.next());
+        assertExecEquals(Character("v"), it.next());
+        assertExecEquals(Character("i"), it.next());
+
+        assertFalse(it.hasNext());
+    }
 }
 
 class Main
