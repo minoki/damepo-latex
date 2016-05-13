@@ -15,24 +15,22 @@ lib_src = \
  ../minilatex/Scope.hx \
  ../minilatex/ExpansionProcessor.hx \
  ../minilatex/ExecutionProcessor.hx \
+ ../minilatex/SimpleExecutionProcessor.hx \
  ../minilatex/Command.hx \
  ../minilatex/TeXPrimitive.hx \
  ../minilatex/Environment.hx \
  ../minilatex/TypesetCommand.hx \
  ../minilatex/SimpleHTMLProcessor.hx \
  ../minilatex/Error.hx \
- ../minilatex/Util.hx \
- ../minilatex/util/CharClass.hx \
- ../minilatex/util/CharSet.hx \
- ../minilatex/util/IntSet.hx \
- ../minilatex/util/RxPattern.hx \
- ../minilatex/util/UnicodeUtil.hx
+ ../minilatex/Util.hx
+
+haxeopt= -lib rxpattern -cp .. -dce full
 
 index.js: TestPage.hx $(lib_src)
-	haxe -main TestPage -js $@ -cp ..
+	haxe -main TestPage -js $@ $(haxeopt)
 
 SimpleHTML.js: SimpleHTML.hx $(lib_src)
-	haxe -main SimpleHTML -js $@ -cp ..
+	haxe -main SimpleHTML -js $@ $(haxeopt)
 
 %.min.js: %.js
 	$(closure-compiler) --js $< --js_output_file $@
