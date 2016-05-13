@@ -37,6 +37,7 @@ interface IExpansionProcessor
     function getCurrentScope(): IScope;
     function hasPendingToken(): Bool;
     function nextToken(): Null<ExpansionToken>;
+    function expandedExpansionToken(?skipSpaces: Bool): Null<ExpansionToken>;
     function unreadExpansionToken(t: ExpansionToken): Void;
     function expandCompletely(tokens: Array<Token>): Array<Token>;
 }
@@ -167,6 +168,28 @@ class ExpansionProcessorUtil
             null;
         };
     }
+    public static function expandedToken(p: IExpansionProcessor, skipSpaces = false): Null<Token>
+    {
+        var t = p.expandedExpansionToken(skipSpaces);
+        if (t != null) {
+            return t.token;
+        } else {
+            return null;
+        }
+    }
+    public static function skipOptionalSpace(p: IExpansionProcessor): Void
+    {
+        var t = p.nextToken();
+        if (t == null) {
+            return;
+        }
+        switch (t.token.value) {
+        case Space(_):
+            /* Do nothing */
+        default:
+            p.unreadExpansionToken(t);
+        }
+    }
 }
 class LocalExpansionProcessor implements IExpansionProcessor
 {
@@ -202,6 +225,37 @@ class LocalExpansionProcessor implements IExpansionProcessor
         this.tokens.unshift(t);
         if (this.tokens.length > this.pendingTokenLimit) {
             throw new LaTeXError("token list too long");
+        }
+    }
+    public function expandedExpansionToken(?skipSpaces = false): Null<ExpansionToken>
+    {
+        while (true) {
+            var t = this.nextToken();
+            if (t == null) {
+                return null;
+            }
+            switch (t.token.value) {
+            case Parameter(_):
+                throw new LaTeXError("unexpected parameter char '#'");
+            case Space(_) if (skipSpaces):
+                /* continue */
+            case Active(_) | ControlSequence(_):
+                switch (this.scope.lookupExpandableCommand(t.token.value)) {
+                case null:
+                    return t;
+                case ExpandableCommand(command):
+                    if (t.depth > this.recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    var expanded = command.expand(this);
+                    this.unreadTokens(expanded, t.depth + 1);
+                    /* continue */
+                case ExecutableCommand:
+                    return t;
+                }
+            default:
+                return t;
+            }
         }
     }
     public function expand(): Null<Token>
@@ -291,7 +345,38 @@ class ExpansionProcessor<E> implements IExpansionProcessor
             }
         }
     }
-    public function expand(): Null<ExpansionResult<E>>
+    public function expandedExpansionToken(?skipSpaces = false): Null<ExpansionToken>
+    {
+        while (true) {
+            var t = this.nextToken();
+            if (t == null) {
+                return null;
+            }
+            switch (t.token.value) {
+            case Parameter(_):
+                throw new LaTeXError("unexpected parameter char '#'");
+            case Space(_) if (skipSpaces):
+                /* continue */
+            case Active(_) | ControlSequence(_):
+                switch (this.currentScope.lookupExpandableCommand(t.token.value)) {
+                case null:
+                    return t;
+                case ExpandableCommand(command):
+                    if (t.depth > this.recursionLimit) {
+                        throw new LaTeXError("recursion too deep");
+                    }
+                    var expanded = command.expand(this);
+                    this.unreadTokens(expanded, t.depth + 1);
+                    /* continue */
+                case ExecutableCommand:
+                    return t;
+                }
+            default:
+                return t;
+            }
+        }
+    }
+    public function expand(skipSpaces = false): Null<ExpansionResult<E>>
     {
         while (true) {
             var t = this.nextToken();
@@ -339,7 +424,11 @@ class ExpansionProcessor<E> implements IExpansionProcessor
                     return ExecutableCommand(t.token, command);
                 }
             case Space(c):
-                return Space;
+                if (!skipSpaces) {
+                    return Space;
+                } else {
+                    /* continue */
+                }
             case Character(c):
                 return Character(c);
             }
