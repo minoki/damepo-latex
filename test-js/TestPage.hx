@@ -6,6 +6,7 @@ import minilatex.Token;
 import minilatex.Tokenizer;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
+import minilatex.SimpleExecutionProcessor;
 import minilatex.Error;
 import minilatex.Command;
 
@@ -58,7 +59,7 @@ class TestPage
                         try {
                             var tokenizer = new Tokenizer(inputElement.value);
                             var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), 1000, 1000);
-                            var executionProcessor = new ExecutionProcessor(expansionProcessor);
+                            var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
                             var result = executionProcessor.processAll();
                             printResult(outputElement, result);
                         } catch (e: LaTeXError) {
