@@ -368,15 +368,13 @@ class LocalExpansionProcessor implements IExpansionProcessor
                 switch (this.scope.lookupExpandableCommand(t.token.value)) {
                 case null:
                     return t;
-                case ExpandableCommand(command):
+                case command:
                     if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     /* continue */
-                case ExecutableCommand:
-                    return t;
                 }
             default:
                 return t;
@@ -397,15 +395,13 @@ class LocalExpansionProcessor implements IExpansionProcessor
                 switch (this.scope.lookupExpandableCommand(t.token.value)) {
                 case null:
                     return t.token;
-                case ExpandableCommand(command):
+                case command:
                     if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     /* continue */
-                case ExecutableCommand:
-                    throw new LaTeXError("you cannot execute a command here");
                 }
             default:
                 return t.token;
@@ -486,15 +482,13 @@ class ExpansionProcessor<E> implements IExpansionProcessor
                 switch (this.currentScope.lookupExpandableCommand(t.token.value)) {
                 case null:
                     return t;
-                case ExpandableCommand(command):
+                case command:
                     if (t.depth > this.recursionLimit) {
                         throw new LaTeXError("recursion too deep");
                     }
                     var expanded = command.expand(this);
                     this.unreadTokens(expanded, t.depth + 1);
                     /* continue */
-                case ExecutableCommand:
-                    return t;
                 }
             default:
                 return t;

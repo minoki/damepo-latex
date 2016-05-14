@@ -4,7 +4,7 @@ import minilatex.Tokenizer;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Error;
-enum Command<E> /* contravariant in E: Command<IExecutionProcessor> -> Command<ConcreteExecutionProcessor> */
+enum Command<E>
 {
     ExpandableCommand(c: ExpandableCommand);
     ExecutableCommand(c: ExecutableCommand<E>);
@@ -15,11 +15,12 @@ interface ExpandableCommand
     function expand(processor: IExpansionProcessor): Array<Token>;
 }
 #if js @:remove #end
-interface ExecutableCommand<E> /* contravariant in E: ExecutableCommand<IExecutionProcessor> -> ExecutableCommand<ConcreteExecutionProcessor> */
+interface ExecutableCommand<E>
 {
     function execute(processor: E): Void;
 }
 typedef TExecutableCommand<E> = {
+    /* contravariant in E: TExecutableCommand<IExecutionProcessor> -> TExecutableCommand<ConcreteExecutionProcessor> */
     function execute(processor: E): Void;
 }
 class WrappedExecutableCommand<E> implements ExecutableCommand<E>
@@ -42,18 +43,13 @@ class WrappedExecutableCommand<E> implements ExecutableCommand<E>
         #end
     }
 }
-enum Command_Bottom /* Command<Bottom> */
-{
-    ExpandableCommand(c: ExpandableCommand);
-    ExecutableCommand;
-}
 #if js @:remove #end
 interface IScope
 {
     function getParent(): IScope;
     var isAtLetter(default, null): Bool;
     function isCommandDefined(name: TokenValue): Bool;
-    function lookupExpandableCommand(name: TokenValue): Command_Bottom;
+    function lookupExpandableCommand(name: TokenValue): Null<ExpandableCommand>;
     function defineExpandableCommand(name: TokenValue, definition: ExpandableCommand): Void;
     function isEnvironmentDefined(name: String): Bool;
     function defineEnvironment(name: String): Void;
@@ -63,7 +59,7 @@ typedef TScope = {
     function getParent(): IScope;
     var isAtLetter(default, null): Bool;
     function isCommandDefined(name: TokenValue): Bool;
-    function lookupExpandableCommand(name: TokenValue): Command_Bottom;
+    function lookupExpandableCommand(name: TokenValue): Null<ExpandableCommand>;
     function defineExpandableCommand(name: TokenValue, definition: ExpandableCommand): Void;
     function isEnvironmentDefined(name: String): Bool;
     function defineEnvironment(name: String): Void;
@@ -114,12 +110,12 @@ class Scope<E> implements IScope /* invariant in E */
         }
         return null;
     }
-    public function lookupExpandableCommand(name: TokenValue): Command_Bottom
+    public function lookupExpandableCommand(name: TokenValue): Null<ExpandableCommand>
     {
         return switch (this.lookupCommand(name)) {
         case null: null;
-        case ExpandableCommand(command): ExpandableCommand(command);
-        case ExecutableCommand(command): ExecutableCommand;
+        case ExpandableCommand(command): command;
+        case ExecutableCommand(command): null;
         };
     }
     public function defineCommand(name: TokenValue, definition: Command<E>)
