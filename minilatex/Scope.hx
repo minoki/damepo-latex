@@ -9,12 +9,12 @@ enum Command<E>
     ExpandableCommand(c: ExpandableCommand);
     ExecutableCommand(c: ExecutableCommand<E>);
 }
-#if js @:remove #end
+#if (js || neko || php || python || lua) @:remove #end
 interface ExpandableCommand
 {
     function expand(processor: IExpansionProcessor): Array<Token>;
 }
-#if js @:remove #end
+#if (js || neko || php || python || lua) @:remove #end
 interface ExecutableCommand<E>
 {
     function execute(processor: E): Void;
@@ -23,6 +23,7 @@ typedef TExecutableCommand<E> = {
     /* contravariant in E: TExecutableCommand<IExecutionProcessor> -> TExecutableCommand<ConcreteExecutionProcessor> */
     function execute(processor: E): Void;
 }
+#if (js || neko || php || python || lua) extern #end
 class WrappedExecutableCommand<E> implements ExecutableCommand<E>
 {
     var wrapped: TExecutableCommand<E>;
@@ -30,20 +31,20 @@ class WrappedExecutableCommand<E> implements ExecutableCommand<E>
     {
         this.wrapped = x;
     }
-    public function execute(processor: E)
+    public function execute(processor: E): Void
     {
         this.wrapped.execute(processor);
     }
     public static inline function wrap<E>(x: TExecutableCommand<E>): ExecutableCommand<E>
     {
-        #if js
+        #if (js || neko || php || python || lua)
             return cast x;
         #else
             return new WrappedExecutableCommand(x);
         #end
     }
 }
-#if js @:remove #end
+#if (js || neko || php || python || lua) @:remove #end
 interface IScope
 {
     function getParent(): IScope;
