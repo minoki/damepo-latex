@@ -283,6 +283,7 @@ class ExpansionProcessorUtil
             // decimal
             var u = p.expandedExpansionToken();
             var buf = new StringBuf();
+            buf.add(d);
             while (u != null) {
                 switch (u.token.value) {
                 case Character(c) if (~/[0-9]/.match(c)):
