@@ -1,5 +1,6 @@
 package minilatex;
 import minilatex.Error;
+import rxpattern.unicode.CodePoint;
 enum TokenValue
 {
     Character(c: String);
@@ -111,5 +112,14 @@ class TokenUtil
             }
         }
         return s.toString();
+    }
+    public static function stringToTokenList(s: String): Array<Token>
+    {
+        var a = [];
+        for (i in CodePoint.codePointIterator(s)) {
+            var c = CodePoint.fromCodePoint(i);
+            a.push(new Token(Character(c), null));
+        }
+        return a;
     }
 }
