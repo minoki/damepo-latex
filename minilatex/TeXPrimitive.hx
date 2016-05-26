@@ -16,6 +16,35 @@ class RelaxCommand implements ExecutableCommand<IExecutionProcessor>
     {
     }
 }
+class ExpandafterCommand implements ExpandableCommand
+{
+    public function new()
+    {
+    }
+    public function expand(processor: IExpansionProcessor): Array<Token>
+    {
+        var token1 = processor.nextToken();
+        var token2 = processor.nextToken();
+        if (token1 == null || token2 == null) {
+            throw new LaTeXError("\\expandafter: token missing");
+        }
+        switch (token2.token.value) {
+        case Active(_) | ControlSequence(_):
+            var command = processor.getCurrentScope().lookupExpandableCommand(token2.token.value);
+            if (command != null) {
+                if (token2.depth > processor.recursionLimit) {
+                    throw new LaTeXError("recursion too deep");
+                }
+                var expanded = command.expand(processor);
+                return [token1.token].concat(expanded);
+                //processor.unreadTokens([token1.token].concat(expanded), token2.depth + 1);
+                //return [];
+            }
+        default:
+        }
+        return [token1.token, token2.token];
+    }
+}
 class NumberCommand implements ExpandableCommand
 {
     public function new()
@@ -94,6 +123,7 @@ class TeXPrimitive
         scope.defineUnsupportedTeXPrimitive("gdef");
         scope.defineUnsupportedTeXPrimitive("catcode");
         scope.defineExecutableCommandT(ControlSequence("relax"), new RelaxCommand());
+        scope.defineExpandableCommand(ControlSequence("expandafter"), new ExpandafterCommand());
         scope.defineExpandableCommand(ControlSequence("number"), new NumberCommand());
         scope.defineExpandableCommand(ControlSequence("romannumeral"), new RomannumeralCommand());
     }
