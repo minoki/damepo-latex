@@ -45,6 +45,29 @@ class ExpandafterCommand implements ExpandableCommand
         return [token1.token, token2.token];
     }
 }
+class CsnameCommand implements ExpandableCommand
+{
+    public function new()
+    {
+    }
+    public function expand(processor: IExpansionProcessor): Array<Token>
+    {
+        var token = processor.nextToken();
+        var buf = new StringBuf();
+        while (token != null) {
+            switch (token.token.value) {
+            case Character(c)| Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Active(c) | Parameter(c):
+                buf.add(c);
+            case ControlSequence("endcsname"):
+                return [new Token(ControlSequence(buf.toString()), token.token.location)];
+            case ControlSequence(name):
+                throw new LaTeXError("\\csname: control sequence not allowed here");
+            }
+            token = processor.nextToken();
+        }
+        throw new LaTeXError("\\csname: \\endcsname missing");
+    }
+}
 class NumberCommand implements ExpandableCommand
 {
     public function new()
@@ -124,6 +147,7 @@ class TeXPrimitive
         scope.defineUnsupportedTeXPrimitive("catcode");
         scope.defineExecutableCommandT(ControlSequence("relax"), new RelaxCommand());
         scope.defineExpandableCommand(ControlSequence("expandafter"), new ExpandafterCommand());
+        scope.defineExpandableCommand(ControlSequence("csname"), new CsnameCommand());
         scope.defineExpandableCommand(ControlSequence("number"), new NumberCommand());
         scope.defineExpandableCommand(ControlSequence("romannumeral"), new RomannumeralCommand());
     }
