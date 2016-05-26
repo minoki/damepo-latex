@@ -56,7 +56,7 @@ class CsnameCommand implements ExpandableCommand
         var buf = new StringBuf();
         while (token != null) {
             switch (token.token.value) {
-            case Character(c)| Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Active(c) | Parameter(c):
+            case Character(c) | Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Active(c) | Parameter(c):
                 buf.add(c);
             case ControlSequence("endcsname"):
                 return [new Token(ControlSequence(buf.toString()), token.token.location)];
