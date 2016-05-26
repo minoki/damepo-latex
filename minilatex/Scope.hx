@@ -9,12 +9,10 @@ enum Command<E>
     ExpandableCommand(c: ExpandableCommand);
     ExecutableCommand(c: ExecutableCommand<E>);
 }
-#if (js || neko || php || python || lua) @:remove #end
 interface ExpandableCommand
 {
     function expand(processor: IExpansionProcessor): Array<Token>;
 }
-#if (js || neko || php || python || lua) @:remove #end
 interface ExecutableCommand<E>
 {
     function execute(processor: E): Void;
@@ -44,7 +42,6 @@ class WrappedExecutableCommand<E> implements ExecutableCommand<E>
         #end
     }
 }
-#if (js || neko || php || python || lua) @:remove #end
 interface IScope
 {
     function getParent(): IScope;

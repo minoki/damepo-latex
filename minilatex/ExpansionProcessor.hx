@@ -32,7 +32,6 @@ class ExpansionToken
         this.depth = depth;
     }
 }
-#if js @:remove #end
 interface IExpansionProcessor
 {
     var recursionLimit(default, null): Int;
