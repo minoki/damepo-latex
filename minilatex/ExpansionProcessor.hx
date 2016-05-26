@@ -35,6 +35,7 @@ class ExpansionToken
 #if js @:remove #end
 interface IExpansionProcessor
 {
+    var recursionLimit(default, null): Int;
     function getCurrentScope(): IScope;
     function hasPendingToken(): Bool;
     function nextToken(): Null<ExpansionToken>;
@@ -321,7 +322,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
 {
     var tokens: Array<ExpansionToken>;
     var scope: IScope;
-    var recursionLimit: Int;
+    public var recursionLimit: Int;
     var pendingTokenLimit: Int;
     public function new(tokens: Array<Token>, scope: IScope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
