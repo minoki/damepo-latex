@@ -68,6 +68,25 @@ class CsnameCommand implements ExpandableCommand
         throw new LaTeXError("\\csname: \\endcsname missing");
     }
 }
+class StringCommand implements ExpandableCommand
+{
+    public function new()
+    {
+    }
+    public function expand(processor: IExpansionProcessor): Array<Token>
+    {
+        var token = processor.nextToken();
+        switch (token.token.value) {
+        case Character(c):
+            return [token.token];
+        case Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Active(c) | Parameter(c):
+            // TODO: Other (category code 12)
+            return [new Token(Character(c), null)];
+        case ControlSequence(name):
+            return TokenUtil.stringToTokenList("\\" + name);
+        }
+    }
+}
 class NumberCommand implements ExpandableCommand
 {
     public function new()
@@ -148,6 +167,7 @@ class TeXPrimitive
         scope.defineExecutableCommandT(ControlSequence("relax"), new RelaxCommand());
         scope.defineExpandableCommand(ControlSequence("expandafter"), new ExpandafterCommand());
         scope.defineExpandableCommand(ControlSequence("csname"), new CsnameCommand());
+        scope.defineExpandableCommand(ControlSequence("string"), new StringCommand());
         scope.defineExpandableCommand(ControlSequence("number"), new NumberCommand());
         scope.defineExpandableCommand(ControlSequence("romannumeral"), new RomannumeralCommand());
     }
