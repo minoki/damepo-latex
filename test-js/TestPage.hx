@@ -8,7 +8,7 @@ import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.SimpleExecutionProcessor;
 import minilatex.Error;
-import minilatex.Command;
+import minilatex.command.Core;
 
 class TestPage
 {

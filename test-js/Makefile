@@ -16,10 +16,10 @@ lib_src = \
  ../minilatex/ExpansionProcessor.hx \
  ../minilatex/ExecutionProcessor.hx \
  ../minilatex/SimpleExecutionProcessor.hx \
- ../minilatex/Command.hx \
- ../minilatex/TeXPrimitive.hx \
- ../minilatex/Environment.hx \
- ../minilatex/TypesetCommand.hx \
+ ../minilatex/command/Core.hx \
+ ../minilatex/command/TeXPrimitive.hx \
+ ../minilatex/command/Environment.hx \
+ ../minilatex/command/TypesetCommand.hx \
  ../minilatex/SimpleHTMLProcessor.hx \
  ../minilatex/Error.hx \
  ../minilatex/Util.hx

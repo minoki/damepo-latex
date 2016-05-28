@@ -1,4 +1,4 @@
-package minilatex;
+package minilatex.command;
 import minilatex.Scope;
 import minilatex.ExecutionProcessor;
 class CharCommand implements ExecutableCommand<ITypesetExecutionProcessor>

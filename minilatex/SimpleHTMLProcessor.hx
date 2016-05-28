@@ -1,10 +1,10 @@
 package minilatex;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
-import minilatex.Command;
 import minilatex.Scope;
-import minilatex.TypesetCommand;
 import minilatex.Error;
+import minilatex.command.Core;
+import minilatex.command.TypesetCommand;
 class HTMLUtil
 {
     private static var rxHTMLSpecialChars = new EReg("[<\"\'&>\u00A0]", "g");

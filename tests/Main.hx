@@ -6,7 +6,7 @@ import minilatex.ExecutionProcessor;
 import minilatex.SimpleExecutionProcessor;
 import minilatex.Scope;
 import minilatex.Error;
-import minilatex.Command;
+import minilatex.command.Core;
 using Main.ExpansionResultExtension;
 
 class ExpansionResultExtension
