@@ -15,6 +15,7 @@ interface IScope
     function isEnvironmentDefined(name: String): Bool;
     function defineEnvironment(name: String): Void;
     function setAtLetter(value: Bool): Void;
+    function lookupDynamicExecutableCommand(name: TokenValue): Null<Command<Dynamic>>;
 }
 typedef TScope = {
     function getParent(): IScope;
@@ -70,6 +71,21 @@ class Scope<E> implements IScope /* invariant in E */
             scope = scope.parent;
         }
         return null;
+    }
+    public function lookupDynamicExecutableCommand(name: TokenValue): Null<Command<Dynamic>>
+    {
+        var command = lookupCommand(name);
+        if (command == null) {
+            return null;
+        }
+        switch (command) {
+        case ExpandableCommand(c): return ExpandableCommand(c);
+        case ExecutableCommand(c):
+            var c2: TExecutableCommand<E> = c;
+            var c3: TExecutableCommand<Dynamic> = c2;
+            var c4: ExecutableCommand<Dynamic> = WrappedExecutableCommand.wrap(c3);
+            return ExecutableCommand(c4);
+        }
     }
     public function lookupExpandableCommand(name: TokenValue): Null<ExpandableCommand>
     {
