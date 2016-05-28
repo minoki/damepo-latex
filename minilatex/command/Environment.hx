@@ -1,11 +1,12 @@
-package minilatex;
+package minilatex.command;
 import minilatex.Token;
+import minilatex.Command;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Error;
-import minilatex.Command;
+import minilatex.command.Core;
 import minilatex.Scope;
-using Command.ScopeExtender;
+using Core.ScopeExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
 using Util.NullExtender;
 using Token.TokenValueExtender;

@@ -1,4 +1,5 @@
 package minilatex;
+import minilatex.Command;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.Scope;

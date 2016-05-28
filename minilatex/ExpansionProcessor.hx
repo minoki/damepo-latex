@@ -1,5 +1,6 @@
 package minilatex;
 import minilatex.Token;
+import minilatex.Command;
 import minilatex.Scope;
 import minilatex.Tokenizer;
 import minilatex.Error;

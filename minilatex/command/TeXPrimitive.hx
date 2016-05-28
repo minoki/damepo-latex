@@ -1,7 +1,8 @@
-package minilatex;
+package minilatex.command;
+import minilatex.Token;
+import minilatex.Command;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
-import minilatex.Token;
 import minilatex.Scope;
 import minilatex.Error;
 using Token.TokenValueExtender;
