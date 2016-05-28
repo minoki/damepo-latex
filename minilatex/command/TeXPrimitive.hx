@@ -53,20 +53,37 @@ class CsnameCommand implements ExpandableCommand
     }
     public function expand(processor: IExpansionProcessor): Array<Token>
     {
-        var token = processor.nextToken();
+        var token = processor.expandedToken();
         var buf = new StringBuf();
         while (token != null) {
-            switch (token.token.value) {
-            case Character(c) | Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Active(c) | Parameter(c):
+            switch (token.value) {
+            case Active(_) | ControlSequence(_):
+                switch (processor.getCurrentScope().lookupDynamicExecutableCommand(token.value)) {
+                case null | ExpandableCommand(_):
+                    throw new LaTeXError("\\csname: unexpected control sequence");
+                case ExecutableCommand(command):
+                    if (Std.is(command, EndcsnameCommand)) {
+                        return [new Token(ControlSequence(buf.toString()), token.location)];
+                    } else {
+                        throw new LaTeXError("\\csname: command not allowed here");
+                    }
+                }
+            case Character(c) | Space(c) | BeginGroup(c) | EndGroup(c) | AlignmentTab(c) | Subscript(c) | Superscript(c) | MathShift(c) | Parameter(c):
                 buf.add(c);
-            case ControlSequence("endcsname"):
-                return [new Token(ControlSequence(buf.toString()), token.token.location)];
-            case ControlSequence(name):
-                throw new LaTeXError("\\csname: control sequence not allowed here");
             }
-            token = processor.nextToken();
+            token = processor.expandedToken();
         }
         throw new LaTeXError("\\csname: \\endcsname missing");
+    }
+}
+class EndcsnameCommand implements ExecutableCommand<IExecutionProcessor>
+{
+    public function new()
+    {
+    }
+    public function execute(processor: IExecutionProcessor)
+    {
+        throw new LaTeXError("Extra \\endcsname");
     }
 }
 class StringCommand implements ExpandableCommand
@@ -168,6 +185,7 @@ class TeXPrimitive
         scope.defineExecutableCommandT(ControlSequence("relax"), new RelaxCommand());
         scope.defineExpandableCommand(ControlSequence("expandafter"), new ExpandafterCommand());
         scope.defineExpandableCommand(ControlSequence("csname"), new CsnameCommand());
+        scope.defineExecutableCommandT(ControlSequence("endcsname"), new EndcsnameCommand());
         scope.defineExpandableCommand(ControlSequence("string"), new StringCommand());
         scope.defineExpandableCommand(ControlSequence("number"), new NumberCommand());
         scope.defineExpandableCommand(ControlSequence("romannumeral"), new RomannumeralCommand());
