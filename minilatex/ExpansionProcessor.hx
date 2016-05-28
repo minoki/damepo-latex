@@ -198,6 +198,7 @@ class ExpansionProcessorUtil
         while (t != null) {
             switch (t.value) {
             case Character('+'):
+                /* do nothing */
             case Character('-'):
                 sign = -sign;
             default: break;
@@ -246,7 +247,7 @@ class ExpansionProcessorUtil
                     buf.add(c);
                     u = p.expandedExpansionToken();
                 case Space(_):
-                    // optional space
+                    /* optional space: ignore it */
                     break;
                 default:
                     p.unreadExpansionToken(u);
@@ -267,7 +268,7 @@ class ExpansionProcessorUtil
                     buf.add(c);
                     u = p.expandedExpansionToken();
                 case Space(_):
-                    // optional space
+                    /* optional space: ignore it */
                     break;
                 default:
                     p.unreadExpansionToken(u);
@@ -290,7 +291,7 @@ class ExpansionProcessorUtil
                     buf.add(c);
                     u = p.expandedExpansionToken();
                 case Space(_):
-                    // optional space
+                    /* optional space: ignore it */
                     break;
                 default:
                     p.unreadExpansionToken(u);
