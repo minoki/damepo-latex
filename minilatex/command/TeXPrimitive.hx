@@ -113,12 +113,7 @@ class NumberCommand implements ExpandableCommand
     public function expand(processor: IExpansionProcessor): Array<Token>
     {
         var value = processor.readInteger();
-        var s = "" + value;
-        var result = [];
-        for (i in 0...s.length) {
-            result.push(new Token(Character(s.charAt(i)), null));
-        }
-        return result;
+        return TokenUtil.stringToTokenList("" + value);
     }
 }
 class RomannumeralCommand implements ExpandableCommand
@@ -129,14 +124,9 @@ class RomannumeralCommand implements ExpandableCommand
     public function expand(processor: IExpansionProcessor): Array<Token>
     {
         var value = processor.readInteger();
-        var s = toRomanNumeral(value);
-        var result = [];
-        for (i in 0...s.length) {
-            result.push(new Token(Character(s.charAt(i)), null));
-        }
-        return result;
+        return TokenUtil.stringToTokenList(toRomanNumeral(value));
     }
-    static function toRomanNumeral(value: Int): String
+    public static function toRomanNumeral(value: Int): String
     {
         if (value <= 0) {
             // not supported
