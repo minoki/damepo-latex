@@ -74,8 +74,8 @@ class Global
             // \@nocounterr{within}
             throw new LaTeXError("No counter '" + within + "' defined");
         }
-        var inn = innerCounters(within);
-        if (inn.indexOf(name) != -1) {
+        var inn = innerCounters(name);
+        if (inn.indexOf(within) != -1) {
             throw new LaTeXError("\\@addtoreset: recursion detected");
         }
         this.counterReset.get(within).push(name);
