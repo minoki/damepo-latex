@@ -37,6 +37,7 @@ class ExpansionToken
 interface IExpansionProcessor
 {
     var recursionLimit(default, null): Int;
+    var pendingTokenLimit(default, null): Int;
     function getCurrentScope(): IScope;
     function getGlobal(): Global;
     function hasPendingToken(): Bool;
@@ -327,7 +328,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
     var scope: IScope;
     var global: Global;
     public var recursionLimit: Int;
-    var pendingTokenLimit: Int;
+    public var pendingTokenLimit: Int;
     public function new(tokens: Array<Token>, scope: IScope, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
