@@ -6,9 +6,11 @@ import minilatex.Global;
 import minilatex.Tokenizer;
 import minilatex.Error;
 import minilatex.Util;
+import minilatex.ExecutionProcessor;
 import rxpattern.unicode.CodePoint;
 using Token.TokenValueExtender;
 using Util.ArrayExtender;
+using Util.NullExtender;
 using ExpansionProcessor.ExpansionProcessorUtil;
 enum ExpansionResult<E>
 {
@@ -311,6 +313,20 @@ class ExpansionProcessorUtil
             // TODO: internal integers
             throw new LaTeXError("missing number");
         }
+    }
+    public static function readIntegerFromTokenList(processor: IExpansionProcessor, tokenList: Array<Token>): Int
+    {
+        var localProcessor = new LocalExpansionProcessor(tokenList, processor.getCurrentScope(), processor.getGlobal(), processor.recursionLimit, processor.pendingTokenLimit);
+        var value = readInteger(localProcessor);
+        if (localProcessor.hasPendingToken()) {
+            throw new LaTeXError("extra token after integer");
+        }
+        return value;
+    }
+    public static function readIntegerArgument(processor: IExpansionProcessor, name: TokenValue): Int
+    {
+        var tokenList = expandArgument(processor, name, false);
+        return readIntegerFromTokenList(processor, tokenList);
     }
     private static function octalToInt(s: String)
     {
