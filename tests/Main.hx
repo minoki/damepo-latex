@@ -5,6 +5,7 @@ import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.SimpleExecutionProcessor;
 import minilatex.Scope;
+import minilatex.Global;
 import minilatex.Error;
 import minilatex.command.Core;
 using Main.ExpansionResultExtension;
@@ -120,7 +121,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testBasic()
     {
         var tokenizer = new Tokenizer("\\Hello world!\n% This is a comment\nGood\\%bye!");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null));
+        var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null), new Global());
         assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("Hello"), null)));
         assertETEquals(expansionProcessor.expand(), Character("w"));
         assertETEquals(expansionProcessor.expand(), Character("o"));
@@ -143,7 +144,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testUnicode()
     {
         var tokenizer = new Tokenizer("\\Hello\u{3042}\\\u{1F600}a\\\u{20BBf}a");
-        var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null));
+        var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null), new Global());
         assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("Hello\u{3042}"), null)));
         assertETEquals(expansionProcessor.expand(), UnknownCommand(new Token(ControlSequence("\u{1F600}"), null)));
         assertETEquals(expansionProcessor.expand(), Character("a"));
@@ -153,7 +154,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testSimpleMacro()
     {
         var tokenizer = new Tokenizer("\\newcommand{\\foo}[2]{#2#1}\n\\foo{x}{y}\n \n  \\foo{\\foo{a}{b}}{c}");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -170,7 +171,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testOptionalArgument()
     {
         var tokenizer = new Tokenizer("\\newcommand\\hoge[1][x]{#1}%\n\\hoge { y}%\n\\hoge [z]%\n\\hoge\n");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -183,7 +184,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testCompleteExpansion()
     {
         var tokenizer = new Tokenizer("\\newcommand\\two{2}\\newcommand\\Two{\\two}\\newcommand{\\foo}[\\Two]{#2#1}\\foo{x}{y}");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -194,7 +195,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testEnvironment()
     {
         var tokenizer = new Tokenizer("\\newenvironment{foo}{x}{y}\\begin{foo}123\\end{foo}");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -208,7 +209,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testNumber()
     {
         var tokenizer = new Tokenizer("\\number+0334 \\number`a \\number'10 \\number\"10");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();
@@ -225,7 +226,7 @@ class ExpansionTestCase extends haxe.unit.TestCase
     public function testRomannumeral()
     {
         var tokenizer = new Tokenizer("\\romannumeral+0334 \\romannumeral`a \\romannumeral'10 \\romannumeral\"10");
-        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope());
+        var expansionProcessor = new ExpansionProcessor<SimpleExecutionProcessor>(tokenizer, DefaultScope.getDefaultScope(), new Global());
         var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
         var result = executionProcessor.processAll();
         var it = result.iterator();

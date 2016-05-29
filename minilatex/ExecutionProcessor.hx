@@ -1,6 +1,7 @@
 package minilatex;
 import minilatex.Token;
 import minilatex.Scope;
+import minilatex.Global;
 import minilatex.ExpansionProcessor;
 import minilatex.Error;
 interface IExecutionProcessor
@@ -8,6 +9,7 @@ interface IExecutionProcessor
     function getTokenizer(): Tokenizer;
     function setAtLetter(isLetter: Bool): Void;
     function getExpansionProcessor(): IExpansionProcessor;
+    function getGlobal(): Global;
     function beginEnvironment(name: String): Void;
     function endEnvironment(name: String): Void;
 }
@@ -39,6 +41,10 @@ class BasicExecutionProcessor<E> implements IExecutionProcessor
     public function getExpansionProcessor()
     {
         return this.expansionProcessor;
+    }
+    public function getGlobal()
+    {
+        return this.expansionProcessor.getGlobal();
     }
     public function beginEnvironment(name: String)
     {

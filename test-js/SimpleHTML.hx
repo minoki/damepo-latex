@@ -4,6 +4,7 @@ import js.html.Element;
 import js.html.TextAreaElement;
 import minilatex.Tokenizer;
 import minilatex.Scope;
+import minilatex.Global;
 import minilatex.ExpansionProcessor;
 import minilatex.Error;
 import minilatex.SimpleHTMLProcessor;
@@ -22,7 +23,7 @@ class SimpleHTML
                         }
                         try {
                             var tokenizer = new Tokenizer(inputElement.value);
-                            var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null), 1000, 1000);
+                            var expansionProcessor = new ExpansionProcessor(tokenizer, new Scope(null), new Global(), 1000, 1000);
                             var executionProcessor = new SimpleHTMLProcessor(expansionProcessor);
 			    executionProcessor.defineCommands();
 			    while (executionProcessor.process()) {

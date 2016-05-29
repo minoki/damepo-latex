@@ -4,6 +4,7 @@ import js.html.Element;
 import js.html.TextAreaElement;
 import minilatex.Token;
 import minilatex.Tokenizer;
+import minilatex.Global;
 import minilatex.ExpansionProcessor;
 import minilatex.ExecutionProcessor;
 import minilatex.SimpleExecutionProcessor;
@@ -58,7 +59,7 @@ class TestPage
                         }
                         try {
                             var tokenizer = new Tokenizer(inputElement.value);
-                            var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), 1000, 1000);
+                            var expansionProcessor = new ExpansionProcessor(tokenizer, DefaultScope.getDefaultScope(), new Global(), 1000, 1000);
                             var executionProcessor = new SimpleExecutionProcessor(expansionProcessor);
                             var result = executionProcessor.processAll();
                             printResult(outputElement, result);

@@ -2,6 +2,7 @@ package minilatex;
 import minilatex.Token;
 import minilatex.Command;
 import minilatex.Scope;
+import minilatex.Global;
 import minilatex.Tokenizer;
 import minilatex.Error;
 import minilatex.Util;
@@ -37,6 +38,7 @@ interface IExpansionProcessor
 {
     var recursionLimit(default, null): Int;
     function getCurrentScope(): IScope;
+    function getGlobal(): Global;
     function hasPendingToken(): Bool;
     function nextToken(): Null<ExpansionToken>;
     function expandedExpansionToken(?skipSpaces: Bool): Null<ExpansionToken>;
@@ -323,18 +325,24 @@ class LocalExpansionProcessor implements IExpansionProcessor
 {
     var tokens: Array<ExpansionToken>;
     var scope: IScope;
+    var global: Global;
     public var recursionLimit: Int;
     var pendingTokenLimit: Int;
-    public function new(tokens: Array<Token>, scope: IScope, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokens: Array<Token>, scope: IScope, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
         this.scope = scope;
+        this.global = global;
         this.recursionLimit = recursionLimit;
         this.pendingTokenLimit = pendingTokenLimit + tokens.length;
     }
     public function getCurrentScope()
     {
         return this.scope;
+    }
+    public function getGlobal()
+    {
+        return this.global;
     }
     public function hasPendingToken()
     {
@@ -422,7 +430,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
     }
     public function expandCompletely(tokens: Array<Token>): Array<Token>
     {
-        var localProcessor = new LocalExpansionProcessor(tokens, this.scope, this.recursionLimit, this.pendingTokenLimit);
+        var localProcessor = new LocalExpansionProcessor(tokens, this.scope, this.global, this.recursionLimit, this.pendingTokenLimit);
         return localProcessor.expandAll();
     }
 }
@@ -430,13 +438,15 @@ class ExpansionProcessor<E> implements IExpansionProcessor
 {
     public var tokenizer: Tokenizer;
     public var currentScope: Scope<E>;
+    var global: Global;
     var pendingTokens: Array<ExpansionToken>;
     public var recursionLimit: Int;
     public var pendingTokenLimit: Int;
-    public function new(tokenizer: Tokenizer, initialScope: Scope<E>, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokenizer: Tokenizer, initialScope: Scope<E>, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokenizer = tokenizer;
         this.currentScope = initialScope;
+        this.global = global;
         this.pendingTokens = [];
         this.recursionLimit = recursionLimit;
         this.pendingTokenLimit = pendingTokenLimit;
@@ -444,6 +454,10 @@ class ExpansionProcessor<E> implements IExpansionProcessor
     public function getCurrentScope()
     {
         return this.currentScope;
+    }
+    public function getGlobal()
+    {
+        return this.global;
     }
     public function hasPendingToken(): Bool
     {
@@ -566,7 +580,7 @@ class ExpansionProcessor<E> implements IExpansionProcessor
     }
     public function expandCompletely(tokens: Array<Token>): Array<Token>
     {
-        var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.recursionLimit, this.pendingTokenLimit);
+        var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.global, this.recursionLimit, this.pendingTokenLimit);
         return localProcessor.expandAll();
     }
 }
