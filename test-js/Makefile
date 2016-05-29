@@ -13,10 +13,12 @@ lib_src = \
  ../minilatex/Token.hx \
  ../minilatex/Tokenizer.hx \
  ../minilatex/Scope.hx \
+ ../minilatex/Global.hx \
  ../minilatex/ExpansionProcessor.hx \
  ../minilatex/ExecutionProcessor.hx \
  ../minilatex/SimpleExecutionProcessor.hx \
  ../minilatex/command/Core.hx \
+ ../minilatex/command/Counter.hx \
  ../minilatex/command/TeXPrimitive.hx \
  ../minilatex/command/Environment.hx \
  ../minilatex/command/TypesetCommand.hx \
