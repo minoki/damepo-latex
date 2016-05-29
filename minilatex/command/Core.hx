@@ -6,6 +6,7 @@ import minilatex.ExecutionProcessor;
 import minilatex.Error;
 import minilatex.Scope;
 import minilatex.command.Environment;
+import minilatex.command.Counter;
 import minilatex.command.TeXPrimitive;
 import minilatex.Util;
 using Token.TokenValueExtender;
@@ -240,6 +241,7 @@ class DefaultScope
         scope.defineExpandableCommand(ControlSequence("end"), new EndEnvironmentCommand());
         scope.defineExecutableCommandT(InternalBeginEnvironmentCommand.commandName, new InternalBeginEnvironmentCommand());
         scope.defineExecutableCommandT(InternalEndEnvironmentCommand.commandName, new InternalEndEnvironmentCommand());
+        CounterCommands.defineCounterCommands(scope);
     }
     public static function getDefaultScope<E: IExecutionProcessor>(): Scope<E>
     {

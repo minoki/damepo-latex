@@ -309,6 +309,16 @@ class ExpansionProcessorUtil
                 throw new LaTeXError("missing number");
             }
             return Std.parseInt(s);
+        case ControlSequence("value"):
+            var name = p.expandArgument(ControlSequence("value"), false).bindNull(TokenUtil.tokenListToName);
+            if (name == null) {
+                throw new LaTeXError("\\value: counter name expected");
+            }
+            return p.getGlobal().getCounterValue(name);
+        case ControlSequence(name) if (name.substr(0, 2) == "c@"):
+            // Hack
+            var counterName = name.substr(2);
+            return p.getGlobal().getCounterValue(counterName);
         default:
             // TODO: internal integers
             throw new LaTeXError("missing number");
