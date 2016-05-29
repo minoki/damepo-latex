@@ -53,17 +53,24 @@ class CsnameCommand implements ExpandableCommand
     }
     public function expand(processor: IExpansionProcessor): Array<Token>
     {
+        var scope = processor.getCurrentScope();
         var token = processor.expandedToken();
         var buf = new StringBuf();
         while (token != null) {
             switch (token.value) {
             case Active(_) | ControlSequence(_):
-                switch (processor.getCurrentScope().lookupDynamicExecutableCommand(token.value)) {
+                switch (scope.lookupDynamicExecutableCommand(token.value)) {
                 case null | ExpandableCommand(_):
                     throw new LaTeXError("\\csname: unexpected control sequence");
                 case ExecutableCommand(command):
                     if (Std.is(command, EndcsnameCommand)) {
-                        return [new Token(ControlSequence(buf.toString()), token.location)];
+                        var cs = ControlSequence(buf.toString());
+                        /*
+                          TODO: Define the command to be \relax if not defined.
+                        if (!scope.isCommandDefined()) {
+                        }
+                        */
+                        return [new Token(cs, token.location)];
                     } else {
                         throw new LaTeXError("\\csname: command not allowed here");
                     }
