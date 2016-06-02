@@ -326,7 +326,7 @@ class ExpansionProcessorUtil
     }
     public static function readIntegerFromTokenList(processor: IExpansionProcessor, tokenList: Array<Token>): Int
     {
-        var localProcessor = new LocalExpansionProcessor(tokenList, processor.getCurrentScope(), processor.getGlobal(), processor.recursionLimit, processor.pendingTokenLimit);
+        var localProcessor = new LocalExpansionProcessor(tokenList, processor);
         var value = readInteger(localProcessor);
         if (localProcessor.hasPendingToken()) {
             throw new LaTeXError("extra token after integer");
@@ -355,13 +355,13 @@ class LocalExpansionProcessor implements IExpansionProcessor
     var global: Global;
     public var recursionLimit: Int;
     public var pendingTokenLimit: Int;
-    public function new(tokens: Array<Token>, scope: IScope, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokens: Array<Token>, base: IExpansionProcessor)
     {
         this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
-        this.scope = scope;
-        this.global = global;
-        this.recursionLimit = recursionLimit;
-        this.pendingTokenLimit = pendingTokenLimit + tokens.length;
+        this.scope = base.getCurrentScope();
+        this.global = base.getGlobal();
+        this.recursionLimit = base.recursionLimit;
+        this.pendingTokenLimit = base.pendingTokenLimit + tokens.length;
     }
     public function getCurrentScope()
     {
@@ -457,7 +457,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
     }
     public function expandCompletely(tokens: Array<Token>): Array<Token>
     {
-        var localProcessor = new LocalExpansionProcessor(tokens, this.scope, this.global, this.recursionLimit, this.pendingTokenLimit);
+        var localProcessor = new LocalExpansionProcessor(tokens, this);
         return localProcessor.expandAll();
     }
 }
@@ -607,7 +607,7 @@ class ExpansionProcessor<E> implements IExpansionProcessor
     }
     public function expandCompletely(tokens: Array<Token>): Array<Token>
     {
-        var localProcessor = new LocalExpansionProcessor(tokens, this.currentScope, this.global, this.recursionLimit, this.pendingTokenLimit);
+        var localProcessor = new LocalExpansionProcessor(tokens, this);
         return localProcessor.expandAll();
     }
 }
