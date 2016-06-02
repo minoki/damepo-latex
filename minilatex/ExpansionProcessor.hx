@@ -41,6 +41,7 @@ interface IExpansionProcessor
     var recursionLimit(default, null): Int;
     var pendingTokenLimit(default, null): Int;
     function getCurrentScope(): IScope;
+    function getGlobalScope(): IScope;
     function getGlobal(): Global;
     function hasPendingToken(): Bool;
     function nextToken(): Null<ExpansionToken>;
@@ -352,6 +353,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
 {
     var tokens: Array<ExpansionToken>;
     var scope: IScope;
+    var globalScope: IScope;
     var global: Global;
     public var recursionLimit: Int;
     public var pendingTokenLimit: Int;
@@ -359,6 +361,7 @@ class LocalExpansionProcessor implements IExpansionProcessor
     {
         this.tokens = tokens.map(function(t) { return new ExpansionToken(t, 0); });
         this.scope = base.getCurrentScope();
+        this.globalScope = base.getGlobalScope();
         this.global = base.getGlobal();
         this.recursionLimit = base.recursionLimit;
         this.pendingTokenLimit = base.pendingTokenLimit + tokens.length;
@@ -366,6 +369,10 @@ class LocalExpansionProcessor implements IExpansionProcessor
     public function getCurrentScope()
     {
         return this.scope;
+    }
+    public function getGlobalScope()
+    {
+        return this.globalScope;
     }
     public function getGlobal()
     {
@@ -465,14 +472,16 @@ class ExpansionProcessor<E> implements IExpansionProcessor
 {
     public var tokenizer: Tokenizer;
     public var currentScope: Scope<E>;
+    var globalScope: Scope<E>;
     var global: Global;
     var pendingTokens: Array<ExpansionToken>;
     public var recursionLimit: Int;
     public var pendingTokenLimit: Int;
-    public function new(tokenizer: Tokenizer, initialScope: Scope<E>, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
+    public function new(tokenizer: Tokenizer, globalScope: Scope<E>, global: Global, recursionLimit: Int = 1000, pendingTokenLimit: Int = 1000)
     {
         this.tokenizer = tokenizer;
-        this.currentScope = initialScope;
+        this.currentScope = globalScope;
+        this.globalScope = globalScope;
         this.global = global;
         this.pendingTokens = [];
         this.recursionLimit = recursionLimit;
@@ -481,6 +490,10 @@ class ExpansionProcessor<E> implements IExpansionProcessor
     public function getCurrentScope()
     {
         return this.currentScope;
+    }
+    public function getGlobalScope()
+    {
+        return this.globalScope;
     }
     public function getGlobal()
     {
