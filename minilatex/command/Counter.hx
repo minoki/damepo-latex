@@ -33,8 +33,7 @@ class NewcounterCommand implements ExecutableCommand<IExecutionProcessor>
         processor.getGlobal().newCounter(counterName, within);
         // Define \the<counter>
         var theCounter = ControlSequence("the" + counterName);
-        // TODO: define globally?
-        expP.getCurrentScope().defineExpandableCommand(theCounter, new UserCommand(theCounter, 0, null, [new Token(ControlSequence("@arabic"), null), new Token(ControlSequence("c@" + counterName), null)], false));
+        expP.getGlobalScope().defineExpandableCommand(theCounter, new UserCommand(theCounter, 0, null, [new Token(ControlSequence("@arabic"), null), new Token(ControlSequence("c@" + counterName), null)], false));
         // TODO: \c@<counter>, \cl@<counter>, \p@<counter>
     }
 }
