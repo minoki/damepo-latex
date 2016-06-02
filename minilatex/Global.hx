@@ -3,22 +3,22 @@ import minilatex.Error;
 
 class Global
 {
-    var counters: Map<String, Int>;
+    var namedCounters: Map<String, Int>;
     var counterReset: Map<String, Array<String>>;
     public function new()
     {
-        this.counters = new Map();
+        this.namedCounters = new Map();
         this.counterReset = new Map();
     }
     public function newCounter(name: String, ?within: String)
     {
-        if (this.counters.exists(name)) {
+        if (this.namedCounters.exists(name)) {
             throw new LaTeXError("Counter '" + name + "' already defined");
         }
-        this.counters.set(name, 0);
+        this.namedCounters.set(name, 0);
         this.counterReset.set(name, []);
         if (within != null) {
-            if (!this.counters.exists(within)) {
+            if (!this.namedCounters.exists(within)) {
                 throw new LaTeXError("No counter '" + within + "' defined");
             }
             this.counterReset.get(within).push(name);
@@ -26,51 +26,51 @@ class Global
     }
     public function getCounterValue(name: String): Int
     {
-        if (!this.counters.exists(name)) {
+        if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
             throw new LaTeXError("No counter '" + name + "' defined");
         }
-        return this.counters.get(name);
+        return this.namedCounters.get(name);
     }
     public function setCounterValue(name: String, value: Int): Void
     {
-        if (!this.counters.exists(name)) {
+        if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
             throw new LaTeXError("No counter '" + name + "' defined");
         }
-        this.counters.set(name, value);
+        this.namedCounters.set(name, value);
     }
     public function addToCounter(name: String, delta: Int): Void
     {
-        if (!this.counters.exists(name)) {
+        if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
             throw new LaTeXError("No counter '" + name + "' defined");
         }
-        this.counters.set(name, this.counters.get(name) + delta);
+        this.namedCounters.set(name, this.namedCounters.get(name) + delta);
     }
     public function stepCounter(name: String): Void
     {
-        if (!this.counters.exists(name)) {
+        if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
             throw new LaTeXError("No counter '" + name + "' defined");
         }
-        var newValue = this.counters.get(name) + 1;
-        this.counters.set(name, newValue);
+        var newValue = this.namedCounters.get(name) + 1;
+        this.namedCounters.set(name, newValue);
         for (c in innerCounters(name)) {
-            this.counters.set(c, 0);
+            this.namedCounters.set(c, 0);
         }
     }
     public function isCounterDefined(name: String): Bool
     {
-        return this.counters.exists(name);
+        return this.namedCounters.exists(name);
     }
     public function addToReset(name: String, within: String)
     {
-        if (!this.counters.exists(name)) {
+        if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
             throw new LaTeXError("No counter '" + name + "' defined");
         }
-        if (!this.counters.exists(within)) {
+        if (!this.namedCounters.exists(within)) {
             // \@nocounterr{within}
             throw new LaTeXError("No counter '" + within + "' defined");
         }
