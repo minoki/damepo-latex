@@ -23,7 +23,8 @@ class TypesetCommand
         scope.defineExecutableCommandT(ControlSequence("%"), new CharCommand("%"));
         scope.defineExecutableCommandT(ControlSequence("#"), new CharCommand("#"));
         scope.defineExecutableCommandT(ControlSequence("_"), new CharCommand("_"));
-        scope.defineExecutableCommandT(ControlSequence("{"), new CharCommand("}"));
+        scope.defineExecutableCommandT(ControlSequence("{"), new CharCommand("{"));
+        scope.defineExecutableCommandT(ControlSequence("}"), new CharCommand("}"));
         scope.defineExecutableCommandT(Active("~"), new CharCommand("\u00A0")); // non-breaking space
         scope.defineExecutableCommandT(ControlSequence("OE"), new CharCommand("\u0152"));
         scope.defineExecutableCommandT(ControlSequence("oe"), new CharCommand("\u0153"));
