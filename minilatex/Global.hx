@@ -10,7 +10,7 @@ class Global
         this.namedCounters = new Map();
         this.counterReset = new Map();
     }
-    public function newCounter(name: String, ?within: String)
+    public function newNamedCounter(name: String, ?within: String)
     {
         if (this.namedCounters.exists(name)) {
             throw new LaTeXError("Counter '" + name + "' already defined");
@@ -24,7 +24,7 @@ class Global
             this.counterReset.get(within).push(name);
         }
     }
-    public function getCounterValue(name: String): Int
+    public function getNamedCounterValue(name: String): Int
     {
         if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
@@ -32,7 +32,7 @@ class Global
         }
         return this.namedCounters.get(name);
     }
-    public function setCounterValue(name: String, value: Int): Void
+    public function setNamedCounterValue(name: String, value: Int): Void
     {
         if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
@@ -40,7 +40,7 @@ class Global
         }
         this.namedCounters.set(name, value);
     }
-    public function addToCounter(name: String, delta: Int): Void
+    public function addToNamedCounter(name: String, delta: Int): Void
     {
         if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
@@ -48,7 +48,7 @@ class Global
         }
         this.namedCounters.set(name, this.namedCounters.get(name) + delta);
     }
-    public function stepCounter(name: String): Void
+    public function stepNamedCounter(name: String): Void
     {
         if (!this.namedCounters.exists(name)) {
             // \@nocounterr{name}
@@ -60,7 +60,7 @@ class Global
             this.namedCounters.set(c, 0);
         }
     }
-    public function isCounterDefined(name: String): Bool
+    public function isNamedCounterDefined(name: String): Bool
     {
         return this.namedCounters.exists(name);
     }

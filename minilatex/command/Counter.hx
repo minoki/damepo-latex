@@ -30,7 +30,7 @@ class NewcounterCommand implements ExecutableCommand<IExecutionProcessor>
         } else {
             null;
         };
-        processor.getGlobal().newCounter(counterName, within);
+        processor.getGlobal().newNamedCounter(counterName, within);
         // Define \the<counter>
         var theCounter = ControlSequence("the" + counterName);
         expP.getGlobalScope().defineExpandableCommand(theCounter, new UserCommand(theCounter, 0, null, [new Token(ControlSequence("@arabic"), null), new Token(ControlSequence("c@" + counterName), null)], false));
@@ -51,7 +51,7 @@ class SetcounterCommand implements ExecutableCommand<IExecutionProcessor>
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
         var value = expP.readIntegerArgument(this.name);
-        processor.getGlobal().setCounterValue(counterName, value);
+        processor.getGlobal().setNamedCounterValue(counterName, value);
     }
 }
 class AddtocounterCommand implements ExecutableCommand<IExecutionProcessor>
@@ -68,7 +68,7 @@ class AddtocounterCommand implements ExecutableCommand<IExecutionProcessor>
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
         var value = expP.readIntegerArgument(this.name);
-        processor.getGlobal().addToCounter(counterName, value);
+        processor.getGlobal().addToNamedCounter(counterName, value);
     }
 }
 class StepcounterCommand implements ExecutableCommand<IExecutionProcessor>
@@ -84,7 +84,7 @@ class StepcounterCommand implements ExecutableCommand<IExecutionProcessor>
         var counterName = expP.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
-        processor.getGlobal().stepCounter(counterName);
+        processor.getGlobal().stepNamedCounter(counterName);
     }
 }
 class RefstepcounterCommand implements ExecutableCommand<IExecutionProcessor>
@@ -100,7 +100,7 @@ class RefstepcounterCommand implements ExecutableCommand<IExecutionProcessor>
         var counterName = expP.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
-        processor.getGlobal().stepCounter(counterName);
+        processor.getGlobal().stepNamedCounter(counterName);
         // TODO: define \@currentreference
     }
 }
@@ -135,7 +135,7 @@ class ArabicCommand implements ExpandableCommand
         var counterName = processor.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
-        var value = processor.getGlobal().getCounterValue(counterName);
+        var value = processor.getGlobal().getNamedCounterValue(counterName);
         return TokenUtil.stringToTokenList("" + value);
     }
 }
@@ -166,7 +166,7 @@ class RomanCommand implements ExpandableCommand
         var counterName = processor.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
-        var value = processor.getGlobal().getCounterValue(counterName);
+        var value = processor.getGlobal().getNamedCounterValue(counterName);
         var s = RomannumeralCommand.toRomanNumeral(value);
         if (this.uppercase) s = s.toUpperCase();
         return TokenUtil.stringToTokenList(s);
@@ -186,7 +186,7 @@ class AlphCommand implements ExpandableCommand
         var counterName = processor.expandArgument(this.name, false)
             .bindNull(TokenUtil.tokenListToName)
             .throwIfNull(new LaTeXError("invalid token while reading counter name"));
-        var value = processor.getGlobal().getCounterValue(counterName);
+        var value = processor.getGlobal().getNamedCounterValue(counterName);
         return TokenUtil.stringToTokenList(toAlph(value, this.uppercase));
     }
     static function toAlph(value: Int, uppercase: Bool): String
