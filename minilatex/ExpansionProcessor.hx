@@ -108,13 +108,13 @@ class ExpansionProcessorUtil
                         --count;
                     }
                 case ControlSequence("par") if (!isLong):
-                    throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
+                    throw new LaTeXError("Paragraph ended before " + name.toString() + " was complete");
                 default:
                 }
                 a.push(u.token);
             }
         case ControlSequence("par") if (!isLong):
-            throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
+            throw new LaTeXError("Paragraph ended before " + name.toString() + " was complete");
         case _:
             return [t.token];
         }
@@ -152,7 +152,7 @@ class ExpansionProcessorUtil
                 a.push(t.token);
             }
         case ControlSequence("par") if (!isLong):
-            throw new LaTeXError("Paragraph ended before " + name.toString() + " was compelete");
+            throw new LaTeXError("Paragraph ended before " + name.toString() + " was complete");
         default:
             p.unreadExpansionToken(t);
             return defaultValue;
